@@ -1,0 +1,170 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+<form class="card form-card" method="post" enctype="multipart/form-data" novalidate id="tx-form">
+  {% csrf_token %}
+  <input type="hidden" name="voice_used" id="voice-used" value="0">
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-error">
+    {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- نوع رکورد -->
+  <div class="field">
+    <label>نوع رکورد</label>
+    <div class="kind-switch">
+      {% for radio in form.kind %}
+      <label class="kind-option kind-{{ radio.data.value }}">
+        {{ radio.tag }}
+        <span>{% if radio.data.value == 'expense' %}💸 هزینه{% else %}💰 دریافت / واریز{% endif %}</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% for error in form.kind.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <!-- مبلغ + میکروفون -->
+  <div class="field field-amount {% if form.amount.errors %}has-error{% endif %}">
+    <label for="{{ form.amount.id_for_label }}">
+      مبلغ (تومان) <span class="req">*</span>
+      <span class="label-hint">می‌توانید تایپ کنید یا با میکروفون بگویید «صد و بیست میلیون»</span>
+    </label>
+    <div class="input-with-mic">
+      {{ form.amount }}
+      <button class="mic-btn" type="button" data-voice="amount"
+              data-target="#{{ form.amount.id_for_label }}" title="گفتن مبلغ با صدا">
+        <span class="mic-icon">🎤</span>
+      </button>
+    </div>
+    <p class="amount-words" id="amount-words"></p>
+    <div class="quick-amounts">
+      <button class="chip" type="button" data-amount-add="1000000">+۱ میلیون</button>
+      <button class="chip" type="button" data-amount-add="5000000">+۵ میلیون</button>
+      <button class="chip" type="button" data-amount-add="10000000">+۱۰ میلیون</button>
+      <button class="chip" type="button" data-amount-add="100000000">+۱۰۰ میلیون</button>
+      <button class="chip chip-clear" type="button" data-amount-clear>پاک کردن</button>
+    </div>
+    {% for error in form.amount.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <!-- دسته‌بندی -->
+  <div class="field {% if form.category.errors %}has-error{% endif %}">
+    <label for="{{ form.category.id_for_label }}">
+      دسته‌بندی <span class="req">*</span>
+      {% if profile.can_manage_categories %}
+      <button class="link-btn" type="button" data-open-newcat>＋ دسته جدید</button>
+      {% endif %}
+    </label>
+    {{ form.category }}
+    {% for error in form.category.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+
+    {% if profile.can_manage_categories %}
+    <div class="newcat-box" id="newcat-box" hidden>
+      <div class="newcat-row">
+        <input class="field-input" type="text" id="newcat-name" placeholder="نام دسته جدید (مثلاً داربست)">
+        <input class="field-input icon-input" type="text" id="newcat-icon" value="🧱" maxlength="4">
+        <button class="btn btn-primary btn-sm" type="button" id="newcat-save"
+                data-url="{% url 'ledger:category_quick_create' %}">ساخت</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-close-newcat>لغو</button>
+      </div>
+      <p class="field-help" id="newcat-msg"></p>
+    </div>
+    {% endif %}
+
+    <div class="cat-quick" id="cat-quick">
+      {% for category in categories %}
+      <button class="chip cat-chip" type="button" data-cat-id="{{ category.id }}" data-cat-kind="{{ category.kind }}"
+              style="--chip-color: {{ category.color }};">{{ category.icon }} {{ category.name }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- تاریخ و ساعت -->
+  <div class="field-row">
+    <div class="field {% if form.date.errors %}has-error{% endif %}">
+      <label for="{{ form.date.id_for_label }}">تاریخ (شمسی) <span class="req">*</span></label>
+      <div class="date-wrap">
+        {{ form.date }}
+        <button class="icon-btn calendar-btn" type="button" data-open-calendar="#{{ form.date.id_for_label }}" aria-label="تقویم">📅</button>
+      </div>
+      <div class="quick-dates">
+        <button class="chip" type="button" data-date-set="0">امروز</button>
+        <button class="chip" type="button" data-date-set="-1">دیروز</button>
+        <button class="chip" type="button" data-date-set="-2">۲ روز پیش</button>
+        <button class="chip" type="button" data-date-set="-7">هفته پیش</button>
+      </div>
+      <p class="field-help" id="date-preview"></p>
+      {% for error in form.date.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    {% include "ledger/partials/_field.html" with field=form.time %}
+  </div>
+
+  <!-- توضیحات + میکروفون -->
+  <div class="field {% if form.description.errors %}has-error{% endif %}">
+    <label for="{{ form.description.id_for_label }}">
+      توضیحات
+      <span class="label-hint">با میکروفون هم می‌توانید بگویید</span>
+    </label>
+    <div class="input-with-mic textarea-mic">
+      {{ form.description }}
+      <button class="mic-btn" type="button" data-voice="text"
+              data-target="#{{ form.description.id_for_label }}" title="گفتن توضیحات با صدا">
+        <span class="mic-icon">🎤</span>
+      </button>
+    </div>
+    {% for error in form.description.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="field-row">
+    <div class="field {% if form.payee.errors %}has-error{% endif %}">
+      <label for="{{ form.payee.id_for_label }}">طرف حساب / فروشنده</label>
+      <div class="input-with-mic">
+        {{ form.payee }}
+        <button class="mic-btn mic-sm" type="button" data-voice="text"
+                data-target="#{{ form.payee.id_for_label }}" title="گفتن با صدا">🎤</button>
+      </div>
+      {% for error in form.payee.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+    {% include "ledger/partials/_field.html" with field=form.payment_method %}
+  </div>
+
+  <div class="field-row">
+    {% include "ledger/partials/_field.html" with field=form.project %}
+    {% include "ledger/partials/_field.html" with field=form.receipt %}
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary btn-lg" type="submit">
+      {% if is_new %}ثبت هزینه{% else %}ذخیره تغییرات{% endif %}
+    </button>
+    {% if is_new %}
+    <button class="btn btn-ghost btn-lg" type="submit" name="save_and_new" value="1">ثبت و رکورد بعدی</button>
+    {% endif %}
+    <a class="btn btn-ghost" href="{% if is_new %}{% url 'ledger:transaction_list' %}{% else %}{% url 'ledger:transaction_detail' tx.pk %}{% endif %}">انصراف</a>
+  </div>
+
+  <p class="form-note">
+    راهنما: مبلغ را می‌توانید فارسی بگویید («صد و بیست میلیون») یا بنویسید («۱۲۰۰۰۰۰۰۰»).
+    تاریخ به‌طور پیش‌فرض امروز به وقت تهران است و می‌توانید آن را تغییر دهید.
+  </p>
+</form>
+
+<!-- پنل نمایش وضعیت ضبط صدا -->
+<div class="voice-overlay" id="voice-overlay" hidden>
+  <div class="voice-box">
+    <div class="voice-pulse"><span>🎤</span></div>
+    <h3 id="voice-title">بگویید…</h3>
+    <p class="voice-transcript" id="voice-transcript">در حال شنیدن…</p>
+    <p class="voice-parsed" id="voice-parsed"></p>
+    <div class="voice-actions">
+      <button class="btn btn-primary" type="button" id="voice-accept">تأیید</button>
+      <button class="btn btn-ghost" type="button" id="voice-cancel">لغو</button>
+    </div>
+    <p class="voice-hint">اگر میکروفون کار نکرد، اجازه دسترسی مرورگر را بدهید (کروم روی اندروید یا سافاری روی آیفون).</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% load fa %}
+<a class="tx-row {% if tx.kind == 'income' %}is-income{% endif %}" href="{% url 'ledger:transaction_detail' tx.pk %}">
+  <span class="tx-icon" style="background: {{ tx.category.color }}22; color: {{ tx.category.color }};">
+    {{ tx.category.icon|default:"🧱" }}
+  </span>
+  <span class="tx-main">
+    <span class="tx-title">
+      {{ tx.category.name }}
+      {% if tx.project %}<span class="tag tag-soft">{{ tx.project.name }}</span>{% endif %}
+      {% if tx.voice_used %}<span class="tag tag-voice" title="با صدا ثبت شده">🎤</span>{% endif %}
+    </span>
+    {% if tx.short_description %}<span class="tx-desc">{{ tx.short_description }}</span>{% endif %}
+    <span class="tx-meta">
+      <span>{{ tx.date|jdate_long }}</span>
+      {% if tx.time %}<span>· {{ tx.time|jtime }}</span>{% endif %}
+      <span>· {{ tx.created_by.profile.display_name|default:tx.created_by.username }}</span>
+      {% if tx.payee %}<span>· {{ tx.payee }}</span>{% endif %}
+    </span>
+  </span>
+  <span class="tx-amount {% if tx.kind == 'income' %}amount-in{% else %}amount-out{% endif %}">
+    {% if tx.kind == 'income' %}+{% else %}−{% endif %}{{ tx.amount|money }}
+    <small>تومان</small>
+  </span>
+</a>

@@ -1,0 +1,157 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+
+{% include "ledger/partials/_filter_panel.html" %}
+
+<div class="stat-grid stat-grid-4">
+  <div class="card stat-card stat-danger">
+    <div class="stat-label">جمع هزینه ({{ filters.range_label }})</div>
+    <div class="stat-value">{{ summary.expense_total|money }} <small>تومان</small></div>
+    <div class="stat-sub">{{ summary.expense_total|amount_words }}</div>
+  </div>
+  <div class="card stat-card stat-success">
+    <div class="stat-label">جمع دریافتی</div>
+    <div class="stat-value">{{ summary.income_total|money }} <small>تومان</small></div>
+  </div>
+  <div class="card stat-card stat-info">
+    <div class="stat-label">میانگین هر هزینه</div>
+    <div class="stat-value">{{ summary.average|money }} <small>تومان</small></div>
+  </div>
+  <div class="card stat-card stat-neutral">
+    <div class="stat-label">تعداد رکورد</div>
+    <div class="stat-value">{{ summary.count|fa }}</div>
+    <div class="stat-foot">مانده: {{ summary.balance|money }} تومان</div>
+  </div>
+</div>
+
+<!-- نمودار ۱۲ ماه -->
+<section class="card">
+  <div class="card-head"><h2>روند ۱۲ ماه اخیر ({% if report_kind == 'income' %}دریافتی{% else %}هزینه{% endif %})</h2></div>
+  <div class="chart-bars chart-months">
+    {% for row in month_series %}
+    <div class="chart-col" title="{{ row.full_label }}: {{ row.total|money }} تومان">
+      <div class="chart-bar-wrap">
+        <div class="chart-bar" style="height: {{ row.percent|bar_width }}%"></div>
+      </div>
+      <div class="chart-value">{{ row.total|short_money }}</div>
+      <div class="chart-label">{{ row.label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="grid-2">
+  <!-- تفکیک دسته -->
+  <section class="card">
+    <div class="card-head">
+      <h2>تفکیک بر اساس دسته‌بندی</h2>
+      <small class="muted">جمع: {{ category_total|money }}</small>
+    </div>
+    {% if category_rows %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>دسته</th><th>مبلغ (تومان)</th><th>سهم</th><th>تعداد</th></tr></thead>
+        <tbody>
+        {% for row in category_rows %}
+        <tr>
+          <td>
+            <a class="link" href="{% url_toggle 'cat' row.id %}">
+              <span class="dot" style="background: {{ row.color }};"></span> {{ row.icon }} {{ row.name }}
+            </a>
+          </td>
+          <td class="num">{{ row.total|money }}</td>
+          <td>
+            <span class="progress progress-sm"><span class="progress-fill" style="width: {{ row.percent|bar_width }}%; background: {{ row.color }};"></span></span>
+            <small>{{ row.percent|percent }}</small>
+          </td>
+          <td class="num">{{ row.count|fa }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="empty">داده‌ای برای نمایش نیست.</p>{% endif %}
+  </section>
+
+  <!-- تفکیک کاربر -->
+  <section class="card">
+    <div class="card-head"><h2>تفکیک بر اساس کاربر</h2></div>
+    {% if user_rows %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>کاربر</th><th>مبلغ (تومان)</th><th>سهم</th><th>تعداد</th></tr></thead>
+        <tbody>
+        {% for row in user_rows %}
+        <tr>
+          <td><a class="link" href="{% url_toggle 'user' row.id %}">{{ row.name }}</a></td>
+          <td class="num">{{ row.total|money }}</td>
+          <td>
+            <span class="progress progress-sm"><span class="progress-fill" style="width: {{ row.percent|bar_width }}%; background: {{ row.color }};"></span></span>
+            <small>{{ row.percent|percent }}</small>
+          </td>
+          <td class="num">{{ row.count|fa }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="empty">داده‌ای برای نمایش نیست.</p>{% endif %}
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>تفکیک بر اساس پروژه</h2></div>
+    {% if project_rows %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>پروژه</th><th>مبلغ (تومان)</th><th>سهم</th><th>تعداد</th></tr></thead>
+        <tbody>
+        {% for row in project_rows %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td class="num">{{ row.total|money }}</td>
+          <td><small>{{ row.percent|percent }}</small></td>
+          <td class="num">{{ row.count|fa }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="empty">داده‌ای برای نمایش نیست.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>تفکیک بر اساس نحوه پرداخت</h2></div>
+    {% if payment_rows %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>روش</th><th>مبلغ (تومان)</th><th>سهم</th><th>تعداد</th></tr></thead>
+        <tbody>
+        {% for row in payment_rows %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td class="num">{{ row.total|money }}</td>
+          <td><small>{{ row.percent|percent }}</small></td>
+          <td class="num">{{ row.count|fa }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="empty">داده‌ای برای نمایش نیست.</p>{% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>۱۰ رکورد بزرگ در این بازه</h2></div>
+  {% if biggest %}
+  <div class="tx-list">
+    {% for tx in biggest %}{% include "ledger/partials/_tx_row.html" %}{% endfor %}
+  </div>
+  {% else %}<p class="empty">داده‌ای برای نمایش نیست.</p>{% endif %}
+</section>
+
+{% endblock %}

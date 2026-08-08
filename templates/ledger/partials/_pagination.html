@@ -1,0 +1,21 @@
+{% load fa %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="pagination">
+  {% if page_obj.has_previous %}
+    <a class="page-btn" href="{% url_page page_obj.previous_page_number %}">قبلی</a>
+  {% else %}
+    <span class="page-btn disabled">قبلی</span>
+  {% endif %}
+
+  <span class="page-info">
+    صفحه {{ page_obj.number|fa }} از {{ page_obj.paginator.num_pages|fa }}
+    <small>({{ page_obj.paginator.count|fa }} رکورد)</small>
+  </span>
+
+  {% if page_obj.has_next %}
+    <a class="page-btn" href="{% url_page page_obj.next_page_number %}">بعدی</a>
+  {% else %}
+    <span class="page-btn disabled">بعدی</span>
+  {% endif %}
+</nav>
+{% endif %}

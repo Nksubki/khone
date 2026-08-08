@@ -1,0 +1,70 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+<div class="detail-wrap">
+  <section class="card detail-card {% if tx.kind == 'income' %}is-income{% endif %}">
+    <div class="detail-head">
+      <span class="detail-icon" style="background: {{ tx.category.color }}22; color: {{ tx.category.color }};">
+        {{ tx.category.icon|default:"🧱" }}
+      </span>
+      <div>
+        <span class="tag {% if tx.kind == 'income' %}tag-in{% else %}tag-out{% endif %}">{{ tx.get_kind_display }}</span>
+        <h2>{{ tx.category.name }}</h2>
+        <p class="muted">{{ tx.date|jdate_full }}{% if tx.time %} — ساعت {{ tx.time|jtime }}{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="detail-amount {% if tx.kind == 'income' %}amount-in{% else %}amount-out{% endif %}">
+      {{ tx.amount|money }} <small>تومان</small>
+      <div class="detail-words">{{ tx.amount|amount_words }} تومان</div>
+    </div>
+
+    <dl class="detail-list">
+      {% if tx.description %}
+      <div><dt>توضیحات</dt><dd class="pre-line">{{ tx.description }}</dd></div>
+      {% endif %}
+      {% if tx.payee %}<div><dt>طرف حساب</dt><dd>{{ tx.payee }}</dd></div>{% endif %}
+      <div><dt>نحوه پرداخت</dt><dd>{{ tx.get_payment_method_display }}</dd></div>
+      {% if tx.project %}<div><dt>پروژه</dt><dd>{{ tx.project.name }}</dd></div>{% endif %}
+      <div><dt>ثبت‌کننده</dt><dd>{{ tx.created_by.profile.display_name|default:tx.created_by.username }}</dd></div>
+      <div><dt>تاریخ شمسی</dt><dd>{{ tx.date|jdate }} ({{ tx.date|jdate_long }})</dd></div>
+      <div><dt>زمان ثبت در سیستم</dt><dd>{{ tx.created_at|jdatetime }}</dd></div>
+      {% if tx.updated_at %}<div><dt>آخرین ویرایش</dt><dd>{{ tx.updated_at|jdatetime }}</dd></div>{% endif %}
+      {% if tx.voice_used %}<div><dt>روش ثبت</dt><dd>🎤 با ورودی صوتی</dd></div>{% endif %}
+      {% if tx.receipt %}
+      <div><dt>رسید / فاکتور</dt><dd><a class="link" href="{{ tx.receipt.url }}" target="_blank" rel="noopener">مشاهده فایل</a></dd></div>
+      {% endif %}
+    </dl>
+
+    {% if tx.receipt %}
+      {% if tx.receipt.url|lower|slice:"-4:" != ".pdf" %}
+      <div class="receipt-preview">
+        <img src="{{ tx.receipt.url }}" alt="رسید" loading="lazy">
+      </div>
+      {% endif %}
+    {% endif %}
+
+    <div class="form-actions">
+      {% if can_edit %}
+      <a class="btn btn-primary" href="{% url 'ledger:transaction_edit' tx.pk %}">✏️ ویرایش</a>
+      <form method="post" action="{% url 'ledger:transaction_delete' tx.pk %}" class="inline-form"
+            onsubmit="return confirm('این رکورد حذف شود؟ این کار قابل بازگشت نیست.');">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">🗑️ حذف</button>
+      </form>
+      {% endif %}
+      <a class="btn btn-ghost" href="{% url 'ledger:transaction_list' %}">بازگشت به فهرست</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>فیلترهای سریع مرتبط</h2></div>
+    <div class="quick-ranges">
+      <a class="chip" href="{% url 'ledger:transaction_list' %}?range=all&cat={{ tx.category.id }}">همه رکوردهای «{{ tx.category.name }}»</a>
+      <a class="chip" href="{% url 'ledger:transaction_list' %}?range=all&user={{ tx.created_by.id }}">همه رکوردهای این کاربر</a>
+      <a class="chip" href="{% url 'ledger:transaction_list' %}?range=custom&from={{ tx.jalali_date_input }}&to={{ tx.jalali_date_input }}">همه رکوردهای این روز</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

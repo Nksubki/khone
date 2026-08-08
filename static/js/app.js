@@ -1,0 +1,348 @@
+/* =========================================================================
+   app.js — رفتارهای عمومی رابط کاربری
+   ========================================================================= */
+(function () {
+  'use strict';
+
+  function on(selector, event, handler) {
+    document.querySelectorAll(selector).forEach(function (element) {
+      element.addEventListener(event, handler);
+    });
+  }
+
+  function getCookie(name) {
+    var value = '; ' + document.cookie;
+    var parts = value.split('; ' + name + '=');
+    if (parts.length === 2) { return parts.pop().split(';').shift(); }
+    return '';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    /* ---------------- تم روشن/تیره ---------------- */
+    on('[data-theme-toggle]', 'click', function () {
+      var root = document.documentElement;
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('khone-theme', next); } catch (e) {}
+    });
+
+    /* ---------------- نوار کناری موبایل ---------------- */
+    var sidebar = document.getElementById('sidebar');
+    var backdrop = document.querySelector('.sidebar-backdrop');
+
+    function openSidebar() {
+      if (sidebar) { sidebar.classList.add('open'); }
+      if (backdrop) { backdrop.classList.add('show'); }
+    }
+    function closeSidebar() {
+      if (sidebar) { sidebar.classList.remove('open'); }
+      if (backdrop) { backdrop.classList.remove('show'); }
+    }
+    on('[data-open-sidebar]', 'click', openSidebar);
+    on('[data-close-sidebar]', 'click', closeSidebar);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') { closeSidebar(); }
+    });
+
+    /* ---------------- بستن پیام‌ها ---------------- */
+    on('[data-dismiss]', 'click', function (event) {
+      var alertBox = event.currentTarget.closest('.alert');
+      if (alertBox) { alertBox.remove(); }
+    });
+    setTimeout(function () {
+      document.querySelectorAll('.alert-success, .alert-info').forEach(function (box) {
+        box.style.transition = 'opacity .4s';
+        box.style.opacity = '0';
+        setTimeout(function () { box.remove(); }, 400);
+      });
+    }, 6000);
+
+    /* ---------------- نمایش/پنهان کردن فیلترها ---------------- */
+    var filterForm = document.getElementById('filter-form');
+    on('[data-toggle-filters]', 'click', function () {
+      if (filterForm) { filterForm.classList.toggle('collapsed'); }
+    });
+    if (filterForm && window.innerWidth < 820) {
+      var hasActive = document.querySelector('.check-chip input:checked');
+      if (!hasActive) { filterForm.classList.add('collapsed'); }
+    }
+
+    /* ---------------- فیلدهای مبلغ: جداکننده هزارگان ---------------- */
+    function formatAmountInput(input) {
+      if (!window.KhoneNumber) { return; }
+      var raw = window.KhoneNumber.toEnglishDigits(input.value || '').replace(/[^\d]/g, '');
+      if (!raw) {
+        input.value = '';
+        return;
+      }
+      input.value = window.KhoneNumber.format(parseInt(raw, 10), false);
+    }
+
+    document.querySelectorAll('[data-amount]').forEach(function (input) {
+      input.addEventListener('input', function () {
+        var hasWords = /[\u0600-\u06FF]/.test(input.value);
+        if (!hasWords) { formatAmountInput(input); }
+        updateAmountWords();
+      });
+      input.addEventListener('blur', function () {
+        if (window.KhoneNumber) {
+          var parsed = window.KhoneNumber.parse(input.value);
+          if (parsed !== null) { input.value = window.KhoneNumber.format(parsed, false); }
+        }
+        updateAmountWords();
+      });
+    });
+
+    /* ---------------- نمایش مبلغ به حروف ---------------- */
+    var amountWordsBox = document.getElementById('amount-words');
+    var mainAmountInput = document.querySelector('#tx-form [data-amount]');
+
+    function updateAmountWords() {
+      if (!amountWordsBox || !mainAmountInput || !window.KhoneNumber) { return; }
+      var value = window.KhoneNumber.parse(mainAmountInput.value);
+      if (value === null) {
+        amountWordsBox.textContent = '';
+        return;
+      }
+      amountWordsBox.textContent = window.KhoneNumber.toWords(value) + ' تومان';
+    }
+    updateAmountWords();
+
+    /* ---------------- دکمه‌های افزودن سریع مبلغ ---------------- */
+    on('[data-amount-add]', 'click', function (event) {
+      if (!mainAmountInput || !window.KhoneNumber) { return; }
+      var add = parseInt(event.currentTarget.getAttribute('data-amount-add'), 10) || 0;
+      var current = window.KhoneNumber.parse(mainAmountInput.value) || 0;
+      mainAmountInput.value = window.KhoneNumber.format(current + add, false);
+      updateAmountWords();
+    });
+    on('[data-amount-clear]', 'click', function () {
+      if (!mainAmountInput) { return; }
+      mainAmountInput.value = '';
+      updateAmountWords();
+      mainAmountInput.focus();
+    });
+
+    /* ---------------- تاریخ شمسی ---------------- */
+    on('[data-open-calendar]', 'click', function (event) {
+      var selector = event.currentTarget.getAttribute('data-open-calendar');
+      var input = document.querySelector(selector);
+      if (input && window.KhoneDate) { window.KhoneDate.openPicker(input); }
+    });
+
+    document.querySelectorAll('[data-jalali-date]').forEach(function (input) {
+      input.addEventListener('focus', function () {
+        if (window.KhoneDate && window.innerWidth >= 560) {
+          window.KhoneDate.openPicker(input);
+        }
+      });
+      input.addEventListener('input', function () {
+        if (!window.KhoneNumber) { return; }
+        var digits = window.KhoneNumber.toEnglishDigits(input.value).replace(/[^\d/]/g, '');
+        // درج خودکار اسلش: 14050517 → 1405/05/17
+        var onlyDigits = digits.replace(/\//g, '');
+        if (digits.indexOf('/') === -1 && onlyDigits.length >= 5) {
+          var out = onlyDigits.substring(0, 4);
+          if (onlyDigits.length > 4) { out += '/' + onlyDigits.substring(4, 6); }
+          if (onlyDigits.length > 6) { out += '/' + onlyDigits.substring(6, 8); }
+          digits = out;
+        }
+        input.value = digits;
+        updateDatePreview();
+      });
+      input.addEventListener('change', updateDatePreview);
+    });
+
+    var datePreview = document.getElementById('date-preview');
+    var dateInput = document.querySelector('#tx-form [data-jalali-date]');
+
+    function updateDatePreview() {
+      if (!datePreview || !dateInput || !window.KhoneDate) { return; }
+      var parts = window.KhoneDate.parseInput(dateInput.value);
+      if (!parts) {
+        datePreview.textContent = dateInput.value ? 'قالب تاریخ درست نیست (نمونه: ۱۴۰۵/۰۵/۱۷)' : '';
+        return;
+      }
+      var names = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'];
+      datePreview.textContent = names[window.KhoneDate.weekdayIndex(parts)] + ' '
+        + window.KhoneDate.formatLong(parts);
+    }
+    updateDatePreview();
+
+    on('[data-date-set]', 'click', function (event) {
+      if (!dateInput || !window.KhoneDate) { return; }
+      var delta = parseInt(event.currentTarget.getAttribute('data-date-set'), 10) || 0;
+      var target = window.KhoneDate.addDays(window.KhoneDate.todayJalali(), delta);
+      dateInput.value = window.KhoneDate.formatJalali(target);
+      updateDatePreview();
+    });
+
+    /* ---------------- ماسک ساعت ---------------- */
+    document.querySelectorAll('[data-time-mask]').forEach(function (input) {
+      input.addEventListener('input', function () {
+        if (!window.KhoneNumber) { return; }
+        var digits = window.KhoneNumber.toEnglishDigits(input.value).replace(/[^\d]/g, '').substring(0, 4);
+        if (digits.length >= 3) {
+          input.value = digits.substring(0, 2) + ':' + digits.substring(2);
+        } else {
+          input.value = digits;
+        }
+      });
+    });
+
+    /* ---------------- انتخاب سریع دسته‌بندی ---------------- */
+    var categorySelect = document.querySelector('#tx-form select[name="category"]');
+
+    function syncCategoryChips() {
+      if (!categorySelect) { return; }
+      document.querySelectorAll('.cat-chip').forEach(function (chip) {
+        chip.classList.toggle('selected', chip.getAttribute('data-cat-id') === categorySelect.value);
+      });
+    }
+    on('.cat-chip', 'click', function (event) {
+      if (!categorySelect) { return; }
+      categorySelect.value = event.currentTarget.getAttribute('data-cat-id');
+      categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+      syncCategoryChips();
+    });
+    if (categorySelect) {
+      categorySelect.addEventListener('change', syncCategoryChips);
+      syncCategoryChips();
+    }
+
+    /* ---------------- فیلتر دسته‌ها بر اساس نوع رکورد ---------------- */
+    var kindRadios = document.querySelectorAll('#tx-form input[name="kind"]');
+
+    function filterCategoriesByKind() {
+      if (!kindRadios.length || !categorySelect) { return; }
+      var kind = 'expense';
+      kindRadios.forEach(function (radio) { if (radio.checked) { kind = radio.value; } });
+
+      Array.prototype.forEach.call(categorySelect.options, function (option) {
+        if (!option.value) { return; }
+        var optionKind = option.getAttribute('data-kind');
+        var show = !optionKind || optionKind === kind;
+        option.hidden = !show;
+        option.disabled = !show;
+      });
+      var selectedOption = categorySelect.options[categorySelect.selectedIndex];
+      if (selectedOption && selectedOption.disabled) { categorySelect.value = ''; }
+
+      document.querySelectorAll('.cat-chip').forEach(function (chip) {
+        var chipKind = chip.getAttribute('data-cat-kind');
+        chip.style.display = (!chipKind || chipKind === kind) ? '' : 'none';
+      });
+      syncCategoryChips();
+    }
+    kindRadios.forEach(function (radio) {
+      radio.addEventListener('change', filterCategoriesByKind);
+    });
+    filterCategoriesByKind();
+
+    /* ---------------- ساخت سریع دسته‌بندی ---------------- */
+    var newcatBox = document.getElementById('newcat-box');
+    on('[data-open-newcat]', 'click', function () {
+      if (!newcatBox) { return; }
+      newcatBox.hidden = !newcatBox.hidden;
+      if (!newcatBox.hidden) {
+        var nameInput = document.getElementById('newcat-name');
+        if (nameInput) { nameInput.focus(); }
+      }
+    });
+    on('[data-close-newcat]', 'click', function () {
+      if (newcatBox) { newcatBox.hidden = true; }
+    });
+
+    var saveCategoryBtn = document.getElementById('newcat-save');
+    if (saveCategoryBtn) {
+      saveCategoryBtn.addEventListener('click', function () {
+        var nameInput = document.getElementById('newcat-name');
+        var iconInput = document.getElementById('newcat-icon');
+        var messageBox = document.getElementById('newcat-msg');
+        var name = (nameInput && nameInput.value || '').trim();
+        if (!name) {
+          if (messageBox) { messageBox.textContent = 'نام دسته را بنویسید.'; }
+          return;
+        }
+        var kind = 'expense';
+        kindRadios.forEach(function (radio) { if (radio.checked) { kind = radio.value; } });
+
+        var body = new FormData();
+        body.append('name', name);
+        body.append('icon', (iconInput && iconInput.value) || '🧱');
+        body.append('kind', kind);
+
+        saveCategoryBtn.disabled = true;
+        if (messageBox) { messageBox.textContent = 'در حال ساخت…'; }
+
+        fetch(saveCategoryBtn.getAttribute('data-url') || '/dastebandi/sari/', {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest' },
+          body: body,
+          credentials: 'same-origin'
+        })
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            saveCategoryBtn.disabled = false;
+            if (!data.ok) {
+              if (messageBox) { messageBox.textContent = data.error || 'ساخت دسته ممکن نشد.'; }
+              return;
+            }
+            if (categorySelect) {
+              var exists = false;
+              Array.prototype.forEach.call(categorySelect.options, function (option) {
+                if (option.value === String(data.id)) { exists = true; }
+              });
+              if (!exists) {
+                var option = document.createElement('option');
+                option.value = String(data.id);
+                option.textContent = data.label;
+                option.setAttribute('data-kind', data.kind || kind);
+                categorySelect.appendChild(option);
+              }
+              categorySelect.value = String(data.id);
+              categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (messageBox) {
+              messageBox.textContent = data.existing
+                ? 'این دسته از قبل وجود داشت و انتخاب شد.'
+                : 'دسته «' + name + '» ساخته و انتخاب شد ✓';
+            }
+            if (nameInput) { nameInput.value = ''; }
+            setTimeout(function () { if (newcatBox) { newcatBox.hidden = true; } }, 1200);
+          })
+          .catch(function () {
+            saveCategoryBtn.disabled = false;
+            if (messageBox) { messageBox.textContent = 'خطای شبکه؛ دوباره تلاش کنید.'; }
+          });
+      });
+    }
+
+    /* ---------------- انتخابگر ایموجی ---------------- */
+    on('[data-emoji]', 'click', function (event) {
+      var button = event.currentTarget;
+      var target = document.querySelector(button.getAttribute('data-target'));
+      if (target) {
+        target.value = button.getAttribute('data-emoji');
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+
+    /* ---------------- جلوگیری از ارسال دوباره فرم ---------------- */
+    document.querySelectorAll('form').forEach(function (form) {
+      form.addEventListener('submit', function () {
+        var button = form.querySelector('button[type="submit"]');
+        if (!button || form.getAttribute('method') === 'get') { return; }
+        setTimeout(function () {
+          button.disabled = true;
+          button.style.opacity = '.7';
+        }, 10);
+        setTimeout(function () {
+          button.disabled = false;
+          button.style.opacity = '';
+        }, 6000);
+      });
+    });
+  });
+})();

@@ -1,0 +1,60 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>کاربران و شرکا</h2>
+    <a class="btn btn-primary btn-sm" href="{% url 'ledger:user_create' %}">＋ ساخت حساب جدید</a>
+  </div>
+  <p class="hint-box">
+    برای هر شریک یا کارمند یک نام کاربری و رمز بسازید. نقش‌ها:
+    <b>مدیر</b> = دسترسی کامل (ساخت کاربر، حذف رکورد دیگران)،
+    <b>شریک</b> = ثبت هزینه و مشاهده گزارش‌ها،
+    <b>ناظر</b> = فقط مشاهده.
+  </p>
+
+  <div class="user-grid">
+    {% for row in rows %}
+    <div class="card user-card {% if not row.user.is_active %}is-off{% endif %}">
+      <div class="user-head">
+        <span class="avatar avatar-lg">{{ row.profile.initials }}</span>
+        <div>
+          <strong>{{ row.profile.display_name }}</strong>
+          <div class="user-tags">
+            <span class="tag {% if row.profile.is_owner %}tag-owner{% elif row.profile.is_viewer %}tag-off{% else %}tag-soft{% endif %}">
+              {{ row.profile.get_role_display }}
+            </span>
+            {% if not row.user.is_active %}<span class="tag tag-off">غیرفعال</span>{% endif %}
+            {% if not row.profile.can_view_all and not row.profile.is_owner %}
+            <span class="tag tag-soft">فقط رکوردهای خودش</span>
+            {% endif %}
+          </div>
+          <small class="muted mono">{{ row.user.username }}{% if row.profile.phone %} · {{ row.profile.phone|fa }}{% endif %}</small>
+        </div>
+      </div>
+
+      <div class="user-stats">
+        <div><span class="muted">هزینه {{ month_label }}</span><strong>{{ row.month_total|money }}</strong></div>
+        <div><span class="muted">جمع کل</span><strong>{{ row.total|money }}</strong></div>
+        <div><span class="muted">تعداد رکورد</span><strong>{{ row.count|fa }}</strong></div>
+      </div>
+
+      {% if row.last %}
+      <small class="muted">آخرین ثبت: {{ row.last.date|jdate_long }} — {{ row.last.amount|money }} تومان</small>
+      {% else %}
+      <small class="muted">هنوز رکوردی ثبت نکرده است.</small>
+      {% endif %}
+
+      {% if row.profile.note %}<small class="muted">📝 {{ row.profile.note }}</small>{% endif %}
+
+      <div class="user-actions">
+        <a class="btn btn-ghost btn-sm" href="{% url 'ledger:transaction_list' %}?range=all&user={{ row.user.id }}">هزینه‌هایش</a>
+        <a class="btn btn-ghost btn-sm" href="{% url 'ledger:user_edit' row.user.id %}">ویرایش</a>
+        <a class="btn btn-ghost btn-sm" href="{% url 'ledger:user_password' row.user.id %}">تغییر رمز</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head"><h2>گزارش فعالیت‌ها</h2></div>
+  <p class="hint-box">هر ثبت، ویرایش، حذف و ورود در این فهرست ثبت می‌شود تا بین شرکا شفافیت کامل باشد.</p>
+
+  {% if logs %}
+  <ul class="activity-list">
+    {% for log in logs %}
+    <li>
+      <span class="activity-dot activity-{{ log.action }}"></span>
+      <span class="activity-body">
+        <strong>{{ log.user.profile.display_name|default:log.user.username|default:"سیستم" }}</strong>
+        <span>{{ log.summary }}</span>
+        <small class="muted">{{ log.jalali_datetime }}</small>
+      </span>
+      <span class="tag tag-soft">{{ log.get_action_display }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% include "ledger/partials/_pagination.html" %}
+  {% else %}
+  <p class="empty">فعالیتی ثبت نشده است.</p>
+  {% endif %}
+</section>
+{% endblock %}

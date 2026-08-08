@@ -1,0 +1,47 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>مشخصات من</h2></div>
+    <div class="profile-head">
+      <span class="avatar avatar-lg">{{ profile.initials }}</span>
+      <div>
+        <strong>{{ profile.display_name }}</strong>
+        <div><span class="tag tag-soft">{{ profile.get_role_display }}</span></div>
+        <small class="muted mono">{{ user.username }}</small>
+      </div>
+    </div>
+
+    <div class="user-stats">
+      <div><span class="muted">هزینه {{ month_label }}</span><strong>{{ my_month|money }}</strong></div>
+      <div><span class="muted">جمع کل من</span><strong>{{ my_total|money }}</strong></div>
+      <div><span class="muted">تعداد رکورد</span><strong>{{ my_count|fa }}</strong></div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="profile">
+      {% include "ledger/partials/_field.html" with field=profile_form.full_name %}
+      {% include "ledger/partials/_field.html" with field=profile_form.phone %}
+      <button class="btn btn-primary" type="submit">ذخیره مشخصات</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>تغییر رمز عبور</h2></div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="password">
+      {% include "ledger/partials/_field.html" with field=password_form.current_password %}
+      {% include "ledger/partials/_field.html" with field=password_form.password1 %}
+      {% include "ledger/partials/_field.html" with field=password_form.password2 %}
+      <button class="btn btn-primary" type="submit">تغییر رمز</button>
+    </form>
+
+    <div class="card-head"><h2>ظاهر برنامه</h2></div>
+    <p class="muted">برای تغییر بین حالت روشن و تیره از دکمه 🌙 در نوار بالا استفاده کنید. انتخاب شما در همین مرورگر ذخیره می‌شود.</p>
+  </section>
+</div>
+{% endblock %}

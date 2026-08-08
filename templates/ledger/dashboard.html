@@ -1,0 +1,186 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+
+<!-- کارت‌های آماری -->
+<div class="stat-grid">
+  <div class="card stat-card stat-danger">
+    <div class="stat-label">هزینه {{ month_label }}</div>
+    <div class="stat-value">{{ month_summary.expense_total|money }} <small>تومان</small></div>
+    <div class="stat-sub">{{ month_summary.expense_total|amount_words }}</div>
+    <div class="stat-foot">{{ month_summary.expense_count|fa }} رکورد · میانگین {{ month_summary.average|short_money }}</div>
+  </div>
+
+  <div class="card stat-card stat-success">
+    <div class="stat-label">دریافتی {{ month_label }}</div>
+    <div class="stat-value">{{ month_summary.income_total|money }} <small>تومان</small></div>
+    <div class="stat-sub">{{ month_summary.income_total|amount_words }}</div>
+    <div class="stat-foot">{{ month_summary.income_count|fa }} رکورد</div>
+  </div>
+
+  <div class="card stat-card stat-info">
+    <div class="stat-label">امروز</div>
+    <div class="stat-value">{{ today_expense|money }} <small>تومان</small></div>
+    <div class="stat-sub">این هفته: {{ week_expense|short_money }} تومان</div>
+    <div class="stat-foot">{{ today_count|fa }} رکورد امروز</div>
+  </div>
+
+  <div class="card stat-card stat-neutral">
+    <div class="stat-label">جمع کل هزینه‌ها</div>
+    <div class="stat-value">{{ all_summary.expense_total|money }} <small>تومان</small></div>
+    <div class="stat-sub">
+      {% if all_summary.balance < 0 %}
+        کسری صندوق: {{ all_summary.balance|money }} تومان
+      {% else %}
+        مانده صندوق: {{ all_summary.balance|money }} تومان
+      {% endif %}
+    </div>
+    <div class="stat-foot">{{ all_summary.count|fa }} رکورد در کل · سهم من این ماه: {{ my_month_total|short_money }}</div>
+  </div>
+</div>
+
+<div class="grid-2">
+
+  <!-- نمودار ۶ ماه -->
+  <section class="card">
+    <div class="card-head">
+      <h2>روند هزینه ۶ ماه اخیر</h2>
+      <a class="link" href="{% url 'ledger:reports' %}">گزارش کامل ←</a>
+    </div>
+    {% if month_series %}
+    <div class="chart-bars">
+      {% for row in month_series %}
+      <div class="chart-col" title="{{ row.full_label }}: {{ row.total|money }} تومان">
+        <div class="chart-bar-wrap">
+          <div class="chart-bar" style="height: {{ row.percent|bar_width }}%"></div>
+        </div>
+        <div class="chart-value">{{ row.total|short_money }}</div>
+        <div class="chart-label">{{ row.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">هنوز داده‌ای ثبت نشده است.</p>
+    {% endif %}
+  </section>
+
+  <!-- بیشترین دسته‌ها -->
+  <section class="card">
+    <div class="card-head">
+      <h2>پرهزینه‌ترین دسته‌ها در {{ month_label }}</h2>
+      <a class="link" href="{% url 'ledger:category_list' %}">همه دسته‌ها ←</a>
+    </div>
+    {% if top_categories %}
+    <ul class="rank-list">
+      {% for row in top_categories %}
+      <li>
+        <a class="rank-item" href="{% url 'ledger:transaction_list' %}?range=month&cat={{ row.id }}">
+          <span class="rank-icon" style="background: {{ row.color }}22; color: {{ row.color }};">{{ row.icon }}</span>
+          <span class="rank-body">
+            <span class="rank-top">
+              <strong>{{ row.name }}</strong>
+              <span class="rank-amount">{{ row.total|money }} تومان</span>
+            </span>
+            <span class="progress"><span class="progress-fill" style="width: {{ row.percent|bar_width }}%; background: {{ row.color }};"></span></span>
+            <span class="rank-foot">{{ row.percent|percent }} از هزینه ماه · {{ row.count|fa }} رکورد</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">در این ماه هزینه‌ای ثبت نشده است.</p>
+    {% endif %}
+  </section>
+</div>
+
+<div class="grid-2">
+  <!-- هزینه ۱۴ روز اخیر -->
+  <section class="card">
+    <div class="card-head"><h2>۱۴ روز اخیر</h2></div>
+    <div class="chart-bars chart-days">
+      {% for row in day_series %}
+      <div class="chart-col" title="{{ row.full_label }}: {{ row.total|money }} تومان">
+        <div class="chart-bar-wrap">
+          <div class="chart-bar chart-bar-thin" style="height: {{ row.percent|bar_width }}%"></div>
+        </div>
+        <div class="chart-label">{{ row.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- سهم کاربران -->
+  <section class="card">
+    <div class="card-head">
+      <h2>خرج هر کاربر در {{ month_label }}</h2>
+      {% if profile.can_manage_users %}<a class="link" href="{% url 'ledger:user_list' %}">مدیریت کاربران ←</a>{% endif %}
+    </div>
+    {% if by_user %}
+    <ul class="rank-list">
+      {% for row in by_user %}
+      <li>
+        <a class="rank-item" href="{% url 'ledger:transaction_list' %}?range=month&user={{ row.id }}">
+          <span class="rank-icon avatar-icon" style="background: {{ row.color }}22; color: {{ row.color }};">{% initials row.name %}</span>
+          <span class="rank-body">
+            <span class="rank-top">
+              <strong>{{ row.name }}</strong>
+              <span class="rank-amount">{{ row.total|money }} تومان</span>
+            </span>
+            <span class="progress"><span class="progress-fill" style="width: {{ row.percent|bar_width }}%; background: {{ row.color }};"></span></span>
+            <span class="rank-foot">{{ row.percent|percent }} · {{ row.count|fa }} رکورد</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">در این ماه رکوردی ثبت نشده است.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% if projects %}
+<section class="card">
+  <div class="card-head">
+    <h2>پروژه‌ها</h2>
+    <a class="link" href="{% url 'ledger:project_list' %}">همه پروژه‌ها ←</a>
+  </div>
+  <div class="project-grid">
+    {% for project in projects %}
+    <a class="project-mini" href="{% url 'ledger:transaction_list' %}?range=all&project={{ project.id }}">
+      <strong>🏢 {{ project.name }}</strong>
+      <span>{{ project.total_expense|money }} تومان هزینه</span>
+      {% if project.budget %}
+      <span class="progress"><span class="progress-fill" style="width: {{ project.budget_percent|bar_width }}%"></span></span>
+      <small>{{ project.budget_percent|fa }}٪ از بودجه {{ project.budget|short_money }}</small>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- آخرین رکوردها -->
+<section class="card">
+  <div class="card-head">
+    <h2>آخرین رکوردها</h2>
+    <a class="link" href="{% url 'ledger:transaction_list' %}">همه ←</a>
+  </div>
+  {% if recent %}
+  <div class="tx-list">
+    {% for tx in recent %}{% include "ledger/partials/_tx_row.html" %}{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="empty-icon">🧾</span>
+    <p>هنوز هزینه‌ای ثبت نکرده‌اید.</p>
+    {% if profile.can_add_records %}
+    <a class="btn btn-primary" href="{% url 'ledger:transaction_create' %}">ثبت اولین هزینه</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}

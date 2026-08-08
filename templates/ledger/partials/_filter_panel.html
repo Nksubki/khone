@@ -1,0 +1,135 @@
+{% load fa %}
+<section class="card filter-card">
+  <div class="card-head">
+    <h2>🔎 فیلترها</h2>
+    <div class="head-actions">
+      <button class="btn btn-ghost btn-sm" type="button" data-toggle-filters>نمایش/پنهان</button>
+      <a class="btn btn-ghost btn-sm" href="{{ request.path }}?range=month">پاک کردن</a>
+    </div>
+  </div>
+
+  <!-- بازه‌های سریع -->
+  <div class="quick-ranges">
+    {% for key, label in range_choices %}
+      {% if key != 'custom' %}
+      <a class="chip {% if filters.range_key == key %}chip-active{% endif %}" href="{% url_with range=key from='' to='' %}">{{ label }}</a>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <form class="filter-form" method="get" action="{{ request.path }}" id="filter-form">
+    <div class="filter-grid">
+      <div class="field">
+        <label for="f-q">جستجو در توضیحات / طرف حساب</label>
+        <input class="field-input" type="search" id="f-q" name="q" value="{{ filters.q }}" placeholder="مثلاً میلگرد آجدار">
+      </div>
+
+      <div class="field">
+        <label for="f-kind">نوع رکورد</label>
+        <select class="field-input" id="f-kind" name="kind">
+          <option value="" {% if not filters.kind %}selected{% endif %}>همه</option>
+          <option value="expense" {% if filters.kind == 'expense' %}selected{% endif %}>فقط هزینه‌ها</option>
+          <option value="income" {% if filters.kind == 'income' %}selected{% endif %}>فقط دریافتی‌ها</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-from">از تاریخ</label>
+        <input class="field-input jalali-date" type="text" id="f-from" name="from" data-jalali-date="1"
+               inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۵/۰۱"
+               value="{{ request.GET.from|default:'' }}">
+      </div>
+
+      <div class="field">
+        <label for="f-to">تا تاریخ</label>
+        <input class="field-input jalali-date" type="text" id="f-to" name="to" data-jalali-date="1"
+               inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۵/۳۱"
+               value="{{ request.GET.to|default:'' }}">
+      </div>
+
+      <div class="field">
+        <label for="f-project">پروژه</label>
+        <select class="field-input" id="f-project" name="project">
+          <option value="">همه پروژه‌ها</option>
+          {% for project in all_projects %}
+          <option value="{{ project.id }}" {% if filters.project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-method">نحوه پرداخت</label>
+        <select class="field-input" id="f-method" name="method">
+          <option value="">همه</option>
+          {% for value, label in payment_choices %}
+          <option value="{{ value }}" {% if filters.method == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-min">از مبلغ (تومان)</label>
+        <input class="field-input amount-input" dir="ltr" type="text" id="f-min" name="min" data-amount="1"
+               value="{{ request.GET.min|default:'' }}" placeholder="مثلاً ۱۰۰۰۰۰۰">
+      </div>
+
+      <div class="field">
+        <label for="f-max">تا مبلغ (تومان)</label>
+        <input class="field-input amount-input" dir="ltr" type="text" id="f-max" name="max" data-amount="1"
+               value="{{ request.GET.max|default:'' }}" placeholder="مثلاً ۵۰۰۰۰۰۰۰">
+      </div>
+
+      <div class="field">
+        <label for="f-sort">ترتیب</label>
+        <select class="field-input" id="f-sort" name="sort">
+          {% for value, label in sort_choices %}
+          <option value="{{ value }}" {% if filters.sort == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <details class="filter-details" {% if filters.category_ids %}open{% endif %}>
+      <summary>دسته‌بندی‌ها {% if filters.category_ids %}({{ filters.category_ids|length|fa }} انتخاب){% endif %}</summary>
+      <div class="check-grid">
+        {% for category in all_categories %}
+        <label class="check-chip" style="--chip-color: {{ category.color }};">
+          <input type="checkbox" name="cat" value="{{ category.id }}" {% if category.id in filters.category_ids %}checked{% endif %}>
+          <span>{{ category.icon }} {{ category.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="filter-details" {% if filters.user_ids %}open{% endif %}>
+      <summary>کاربران {% if filters.user_ids %}({{ filters.user_ids|length|fa }} انتخاب){% endif %}</summary>
+      <div class="check-grid">
+        {% for u in all_users %}
+        <label class="check-chip">
+          <input type="checkbox" name="user" value="{{ u.id }}" {% if u.id in filters.user_ids %}checked{% endif %}>
+          <span>{{ u.profile.display_name|default:u.username }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </details>
+
+    <input type="hidden" name="range" value="{% if filters.range_key == 'custom' %}custom{% else %}{{ filters.range_key }}{% endif %}">
+
+    <div class="filter-actions">
+      <button class="btn btn-primary" type="submit">اعمال فیلتر</button>
+      <a class="btn btn-ghost" href="{{ request.path }}?range=month">بازنشانی</a>
+      <a class="btn btn-ghost" href="{% url 'ledger:transaction_export' %}?{{ request.GET.urlencode }}">⬇️ خروجی اکسل (CSV)</a>
+    </div>
+  </form>
+
+  <!-- برچسب فیلترهای فعال -->
+  <div class="active-chips">
+    {% for chip in filters.chips %}
+      {% if chip.removable %}
+        <a class="chip chip-remove" href="{% url_remove chip.param chip.value %}">{{ chip.label }} ✕</a>
+      {% else %}
+        <span class="chip">{{ chip.label }}</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>

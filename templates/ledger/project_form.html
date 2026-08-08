@@ -1,0 +1,27 @@
+{% extends "ledger/base.html" %}
+
+{% block content %}
+<form class="card form-card form-narrow" method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="alert alert-error">{% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}</div>
+  {% endif %}
+
+  {% include "ledger/partials/_field.html" with field=form.name %}
+  {% include "ledger/partials/_field.html" with field=form.address %}
+  {% include "ledger/partials/_field.html" with field=form.budget %}
+  {% include "ledger/partials/_field.html" with field=form.description %}
+
+  <div class="field">
+    <label class="switch">
+      {{ form.is_active }}
+      <span>پروژه فعال است</span>
+    </label>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary btn-lg" type="submit">{% if is_new %}ساخت پروژه{% else %}ذخیره تغییرات{% endif %}</button>
+    <a class="btn btn-ghost" href="{% url 'ledger:project_list' %}">انصراف</a>
+  </div>
+</form>
+{% endblock %}

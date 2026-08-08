@@ -1,0 +1,54 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>دسته‌بندی‌ها <small class="muted">({{ categories|length|fa }})</small></h2>
+    {% if can_manage %}
+    <a class="btn btn-primary btn-sm" href="{% url 'ledger:category_create' %}">＋ دسته‌بندی جدید</a>
+    {% endif %}
+  </div>
+
+  <p class="hint-box">
+    هر دسته‌بندی که لازم دارید بسازید (مثلاً «میلگرد و آهن»، «داربست»، «دستمزد کارگر»).
+    برای دیدن هزینه‌های هر دسته روی آن کلیک کنید.
+  </p>
+
+  <div class="cat-grid">
+    {% for row in categories %}
+    <div class="cat-card {% if not row.obj.is_active %}is-off{% endif %}">
+      <a class="cat-main" href="{% url 'ledger:transaction_list' %}?range=all&cat={{ row.obj.id }}">
+        <span class="cat-icon" style="background: {{ row.obj.color }}22; color: {{ row.obj.color }};">{{ row.obj.icon }}</span>
+        <span class="cat-body">
+          <strong>{{ row.obj.name }}</strong>
+          <small class="tag {% if row.obj.kind == 'income' %}tag-in{% else %}tag-out{% endif %}">{{ row.obj.get_kind_display }}</small>
+          {% if row.obj.description %}<span class="muted">{{ row.obj.description }}</span>{% endif %}
+          <span class="cat-total">{{ row.total|money }} <small>تومان</small></span>
+          <span class="muted">{{ row.count|fa }} رکورد</span>
+          {% if not row.obj.is_active %}<span class="tag tag-off">غیرفعال</span>{% endif %}
+        </span>
+      </a>
+      {% if can_manage %}
+      <div class="cat-actions">
+        <a class="icon-btn" href="{% url 'ledger:category_edit' row.obj.id %}" title="ویرایش">✏️</a>
+        {% if can_delete %}
+        <form method="post" action="{% url 'ledger:category_delete' row.obj.id %}"
+              onsubmit="return confirm('دسته‌بندی «{{ row.obj.name }}» حذف شود؟');">
+          {% csrf_token %}
+          <button class="icon-btn" type="submit" title="حذف">🗑️</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <span class="empty-icon">🗂️</span>
+      <p>هنوز دسته‌بندی‌ای ساخته نشده است.</p>
+      {% if can_manage %}<a class="btn btn-primary" href="{% url 'ledger:category_create' %}">ساخت دسته‌بندی</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

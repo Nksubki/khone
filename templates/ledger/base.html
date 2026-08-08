@@ -1,0 +1,163 @@
+{% load static fa %}<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>{% block title %}{{ page_title|default:"داشبورد" }} — {{ APP_NAME }}{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('khone-theme');
+        if (saved) { document.documentElement.setAttribute('data-theme', saved); }
+        else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============================ نوار کناری ============================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <a class="brand" href="{% url 'ledger:dashboard' %}">
+        <span class="brand-icon">🏗️</span>
+        <span class="brand-text">
+          <strong>{{ APP_SHORT_NAME }}</strong>
+          <small>حساب‌کتاب ساخت‌وساز</small>
+        </span>
+      </a>
+      <button class="icon-btn sidebar-close" type="button" data-close-sidebar aria-label="بستن منو">✕</button>
+    </div>
+
+    <nav class="nav">
+      <a class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'ledger:dashboard' %}">
+        <span class="nav-icon">📊</span> داشبورد
+      </a>
+      <a class="nav-item {% if request.resolver_match.url_name in 'transaction_list transaction_detail transaction_edit' %}active{% endif %}" href="{% url 'ledger:transaction_list' %}">
+        <span class="nav-icon">🧾</span> هزینه‌ها و دریافتی‌ها
+      </a>
+      <a class="nav-item {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'ledger:reports' %}">
+        <span class="nav-icon">📈</span> گزارش‌ها
+      </a>
+      <a class="nav-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'ledger:category_list' %}">
+        <span class="nav-icon">🗂️</span> دسته‌بندی‌ها
+      </a>
+      <a class="nav-item {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'ledger:project_list' %}">
+        <span class="nav-icon">🏢</span> پروژه‌ها
+      </a>
+      {% if profile.can_manage_users %}
+      <a class="nav-item {% if 'user_' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'ledger:user_list' %}">
+        <span class="nav-icon">👥</span> کاربران و شرکا
+      </a>
+      {% endif %}
+      <a class="nav-item {% if request.resolver_match.url_name == 'activity_list' %}active{% endif %}" href="{% url 'ledger:activity_list' %}">
+        <span class="nav-icon">🕘</span> گزارش فعالیت‌ها
+      </a>
+
+      <div class="nav-divider"></div>
+
+      <a class="nav-item {% if request.resolver_match.url_name == 'my_profile' %}active{% endif %}" href="{% url 'ledger:my_profile' %}">
+        <span class="nav-icon">⚙️</span> حساب من
+      </a>
+      {% if user.is_superuser %}
+      <a class="nav-item" href="/admin/" target="_blank" rel="noopener">
+        <span class="nav-icon">🛠️</span> پنل مدیریت جنگو
+      </a>
+      {% endif %}
+    </nav>
+
+    {% if profile.can_add_records %}
+    <a class="btn btn-primary btn-block sidebar-cta" href="{% url 'ledger:transaction_create' %}">
+      <span>＋</span> ثبت هزینه جدید
+    </a>
+    {% endif %}
+
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <span class="avatar">{{ profile.initials }}</span>
+        <span class="user-meta">
+          <strong>{{ profile.display_name }}</strong>
+          <small>{{ profile.get_role_display }}</small>
+        </span>
+      </div>
+      <form method="post" action="{% url 'ledger:logout' %}">
+        {% csrf_token %}
+        <button class="btn btn-ghost btn-block" type="submit">خروج از حساب</button>
+      </form>
+    </div>
+  </aside>
+  <div class="sidebar-backdrop" data-close-sidebar></div>
+
+  <!-- ============================ محتوای اصلی ============================ -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" type="button" data-open-sidebar aria-label="منو">☰</button>
+      <div class="topbar-title">
+        <h1>{{ page_title|default:"داشبورد" }}</h1>
+        <p class="topbar-date">{{ today_jalali }} — ساعت {{ now_time }} <span class="tz">(تهران)</span></p>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" type="button" data-theme-toggle aria-label="تغییر تم">
+          <span class="theme-light">🌙</span><span class="theme-dark">☀️</span>
+        </button>
+        {% if profile.can_add_records %}
+        <a class="btn btn-primary btn-sm hide-mobile" href="{% url 'ledger:transaction_create' %}">＋ ثبت هزینه</a>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if messages %}
+    <div class="messages">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}">
+        <span>{{ message }}</span>
+        <button class="alert-close" type="button" data-dismiss aria-label="بستن">✕</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+      ساخته‌شده برای مدیریت هزینه‌های ساخت‌وساز · تاریخ‌ها شمسی و به وقت تهران
+    </footer>
+  </main>
+
+  <!-- ============================ منوی پایین موبایل ============================ -->
+  <nav class="bottom-nav">
+    <a class="bottom-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'ledger:dashboard' %}">
+      <span>📊</span><small>داشبورد</small>
+    </a>
+    <a class="bottom-item {% if request.resolver_match.url_name == 'transaction_list' %}active{% endif %}" href="{% url 'ledger:transaction_list' %}">
+      <span>🧾</span><small>هزینه‌ها</small>
+    </a>
+    {% if profile.can_add_records %}
+    <a class="bottom-item bottom-add" href="{% url 'ledger:transaction_create' %}" aria-label="ثبت جدید">
+      <span>＋</span>
+    </a>
+    {% endif %}
+    <a class="bottom-item {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'ledger:reports' %}">
+      <span>📈</span><small>گزارش</small>
+    </a>
+    <a class="bottom-item {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}" href="{% url 'ledger:category_list' %}">
+      <span>🗂️</span><small>دسته‌ها</small>
+    </a>
+  </nav>
+</div>
+
+<script src="{% static 'js/persian-number.js' %}"></script>
+<script src="{% static 'js/jalali.js' %}"></script>
+<script src="{% static 'js/voice.js' %}"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

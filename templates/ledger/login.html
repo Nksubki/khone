@@ -1,0 +1,72 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>ورود — حساب‌کتاب ساخت‌وساز</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="login-page">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-brand">
+        <span class="login-icon">🏗️</span>
+        <h1>حساب‌کتاب ساخت‌وساز</h1>
+        <p>ثبت و بررسی هزینه‌های پروژه ساختمانی</p>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}"><span>{{ message }}</span></div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" novalidate class="login-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert-error">
+            {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">نام کاربری</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}">رمز عبور</label>
+          <div class="password-wrap">
+            {{ form.password }}
+            <button class="icon-btn pass-toggle" type="button" data-toggle-password aria-label="نمایش رمز">👁️</button>
+          </div>
+          {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+
+        <button class="btn btn-primary btn-block btn-lg" type="submit">ورود به برنامه</button>
+      </form>
+
+      <div class="login-foot">
+        <span>{{ today_full }}</span>
+        <span>ساعت {{ now_time }} به وقت تهران</span>
+      </div>
+    </div>
+    <p class="login-hint">نام کاربری و رمز را مدیر پروژه برای شما می‌سازد.</p>
+  </div>
+
+  <script>
+    document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var input = btn.parentElement.querySelector('input');
+        if (!input) return;
+        input.type = input.type === 'password' ? 'text' : 'password';
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{% extends "ledger/base.html" %}
+
+{% block content %}
+<form class="card form-card form-narrow" method="post" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="alert alert-error">{% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}</div>
+  {% endif %}
+
+  {% if not is_new %}
+  <p class="hint-box">نام کاربری <b class="mono">{{ target_user.username }}</b> قابل تغییر نیست. برای تغییر رمز از دکمه پایین استفاده کنید.</p>
+  {% endif %}
+
+  {% include "ledger/partials/_field.html" with field=form.full_name %}
+  {% if is_new %}{% include "ledger/partials/_field.html" with field=form.username %}{% endif %}
+  {% include "ledger/partials/_field.html" with field=form.phone %}
+  {% include "ledger/partials/_field.html" with field=form.role %}
+
+  {% if is_new %}
+  <div class="field-row">
+    {% include "ledger/partials/_field.html" with field=form.password1 %}
+    {% include "ledger/partials/_field.html" with field=form.password2 %}
+  </div>
+  {% endif %}
+
+  <div class="field">
+    <label class="switch">
+      {{ form.can_view_all }}
+      <span>بتواند هزینه‌های ثبت‌شده توسط سایر کاربران را ببیند</span>
+    </label>
+  </div>
+
+  {% if not is_new %}
+  <div class="field">
+    <label class="switch">
+      {{ form.is_active }}
+      <span>حساب فعال باشد (اگر خاموش شود، کاربر نمی‌تواند وارد شود)</span>
+    </label>
+    {% if is_self %}<p class="field-help">نمی‌توانید حساب خودتان را غیرفعال کنید.</p>{% endif %}
+  </div>
+  {% endif %}
+
+  {% include "ledger/partials/_field.html" with field=form.note %}
+
+  <div class="form-actions">
+    <button class="btn btn-primary btn-lg" type="submit">{% if is_new %}ساخت حساب{% else %}ذخیره تغییرات{% endif %}</button>
+    {% if not is_new %}
+    <a class="btn btn-ghost" href="{% url 'ledger:user_password' target_user.id %}">تغییر رمز</a>
+    {% endif %}
+    <a class="btn btn-ghost" href="{% url 'ledger:user_list' %}">انصراف</a>
+  </div>
+</form>
+{% endblock %}

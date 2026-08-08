@@ -1,0 +1,54 @@
+{% extends "ledger/base.html" %}
+{% load fa %}
+
+{% block content %}
+<section class="card">
+  <div class="card-head">
+    <h2>پروژه‌ها</h2>
+    {% if can_manage %}<a class="btn btn-primary btn-sm" href="{% url 'ledger:project_create' %}">＋ پروژه جدید</a>{% endif %}
+  </div>
+  <p class="hint-box">اگر بیش از یک ساختمان/کارگاه دارید، برای هرکدام یک پروژه بسازید تا هزینه‌ها جدا محاسبه شود.</p>
+
+  <div class="project-grid project-grid-lg">
+    {% for row in rows %}
+    <div class="card project-card {% if not row.obj.is_active %}is-off{% endif %}">
+      <div class="project-head">
+        <h3>🏢 {{ row.obj.name }}</h3>
+        {% if can_manage %}<a class="icon-btn" href="{% url 'ledger:project_edit' row.obj.id %}" title="ویرایش">✏️</a>{% endif %}
+      </div>
+      {% if row.obj.address %}<p class="muted">📍 {{ row.obj.address }}</p>{% endif %}
+
+      <div class="project-stats">
+        <div><span class="muted">هزینه</span><strong class="amount-out">{{ row.expense|money }}</strong></div>
+        <div><span class="muted">دریافتی</span><strong class="amount-in">{{ row.income|money }}</strong></div>
+        <div><span class="muted">مانده</span><strong>{{ row.balance|money }}</strong></div>
+        <div><span class="muted">رکورد</span><strong>{{ row.count|fa }}</strong></div>
+      </div>
+
+      {% if row.obj.budget %}
+      <div class="budget">
+        <span class="progress"><span class="progress-fill" style="width: {{ row.percent|bar_width }}%"></span></span>
+        <small>{{ row.percent|percent }} از بودجه {{ row.obj.budget|money }} تومان مصرف شده</small>
+      </div>
+      {% endif %}
+
+      {% if row.obj.description %}<p class="muted pre-line">{{ row.obj.description }}</p>{% endif %}
+
+      <a class="btn btn-ghost btn-block btn-sm" href="{% url 'ledger:transaction_list' %}?range=all&project={{ row.obj.id }}">مشاهده هزینه‌ها</a>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+      <span class="empty-icon">🏢</span>
+      <p>پروژه‌ای ثبت نشده است. (ثبت هزینه بدون پروژه هم ممکن است.)</p>
+      {% if can_manage %}<a class="btn btn-primary" href="{% url 'ledger:project_create' %}">ساخت پروژه</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if no_project_count %}
+  <p class="hint-box">
+    {{ no_project_count|fa }} رکورد بدون پروژه ثبت شده است (جمعاً {{ no_project_total|money }} تومان).
+  </p>
+  {% endif %}
+</section>
+{% endblock %}
