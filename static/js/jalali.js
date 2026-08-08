@@ -164,8 +164,13 @@
   var activePicker = null;
 
   function closePicker() {
-    if (activePicker && activePicker.el && activePicker.el.parentNode) {
-      activePicker.el.parentNode.removeChild(activePicker.el);
+    if (activePicker) {
+      if (activePicker.el && activePicker.el.parentNode) {
+        activePicker.el.parentNode.removeChild(activePicker.el);
+      }
+      if (activePicker.backdrop && activePicker.backdrop.parentNode) {
+        activePicker.backdrop.parentNode.removeChild(activePicker.backdrop);
+      }
     }
     activePicker = null;
   }
@@ -288,23 +293,40 @@
   function openPicker(input) {
     if (activePicker && activePicker.input === input) { closePicker(); return; }
     closePicker();
+
     var box = buildPicker(input);
+
+    // روی موبایل: شیت پایین صفحه (بزرگ‌تر و راحت‌تر برای لمس)
+    if (window.innerWidth < 560) {
+      var backdrop = document.createElement('div');
+      backdrop.className = 'jdp-backdrop';
+      backdrop.addEventListener('click', closePicker);
+      document.body.appendChild(backdrop);
+
+      box.className = 'jdp jdp-sheet';
+      document.body.appendChild(box);
+
+      activePicker = { el: box, input: input, backdrop: backdrop };
+      return;
+    }
+
     document.body.appendChild(box);
 
     var rect = input.getBoundingClientRect();
     var top = rect.bottom + window.scrollY + 6;
     var width = box.offsetWidth || 290;
+    var height = box.offsetHeight || 330;
     var left = rect.left + window.scrollX;
     if (left + width > window.innerWidth - 8) {
       left = Math.max(8, window.innerWidth - width - 8);
     }
-    if (top + 320 > window.scrollY + window.innerHeight) {
-      top = Math.max(window.scrollY + 8, rect.top + window.scrollY - 330);
+    if (rect.bottom + height + 12 > window.innerHeight) {
+      top = Math.max(window.scrollY + 8, rect.top + window.scrollY - height - 8);
     }
     box.style.top = top + 'px';
     box.style.left = left + 'px';
 
-    activePicker = { el: box, input: input };
+    activePicker = { el: box, input: input, backdrop: null };
   }
 
   document.addEventListener('click', function (event) {

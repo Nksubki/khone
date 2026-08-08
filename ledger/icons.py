@@ -15,6 +15,7 @@ UI_ICONS = (
     "chevron-right", "moon", "sun", "menu", "logout", "eye", "eye-off",
     "filter", "info", "wallet", "arrow-down-circle", "arrow-up-circle",
     "image", "phone", "note", "key", "user-plus", "shield", "pin",
+    "font-size",
 )
 
 # آیکن‌های قابل انتخاب برای دسته‌بندی‌ها (کلید، عنوان فارسی)

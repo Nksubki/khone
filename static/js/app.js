@@ -19,31 +19,111 @@
 
   document.addEventListener('DOMContentLoaded', function () {
 
-    /* ---------------- تم روشن/تیره ---------------- */
-    on('[data-theme-toggle]', 'click', function () {
-      var root = document.documentElement;
-      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('khone-theme', next); } catch (e) {}
-    });
+    var root = document.documentElement;
 
-    /* ---------------- نوار کناری موبایل ---------------- */
+    /* ---------------- تم روشن/تیره ---------------- */
+    function setTheme(value) {
+      root.setAttribute('data-theme', value);
+      try { localStorage.setItem('khone-theme', value); } catch (e) {}
+      syncThemeButtons();
+    }
+    function syncThemeButtons() {
+      var current = root.getAttribute('data-theme') || 'light';
+      document.querySelectorAll('[data-theme-set]').forEach(function (button) {
+        button.classList.toggle('is-active', button.getAttribute('data-theme-set') === current);
+      });
+    }
+    on('[data-theme-toggle]', 'click', function () {
+      setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+    on('[data-theme-set]', 'click', function (event) {
+      setTheme(event.currentTarget.getAttribute('data-theme-set'));
+    });
+    syncThemeButtons();
+
+    /* ---------------- اندازه متن (برای خوانایی بیشتر) ---------------- */
+    var FONT_SIZES = ['sm', 'md', 'lg', 'xl', 'xxl'];
+    var fontMenu = document.getElementById('font-menu');
+
+    function setFontSize(value) {
+      if (FONT_SIZES.indexOf(value) === -1) { value = 'md'; }
+      root.setAttribute('data-font', value);
+      try { localStorage.setItem('khone-font', value); } catch (e) {}
+      syncFontButtons();
+    }
+    function syncFontButtons() {
+      var current = root.getAttribute('data-font') || 'md';
+      document.querySelectorAll('[data-font-set]').forEach(function (button) {
+        button.classList.toggle('is-active', button.getAttribute('data-font-set') === current);
+      });
+    }
+    function closeFontMenu() {
+      if (fontMenu) { fontMenu.hidden = true; }
+      document.querySelectorAll('[data-font-menu]').forEach(function (button) {
+        button.setAttribute('aria-expanded', 'false');
+      });
+    }
+    on('[data-font-menu]', 'click', function (event) {
+      if (!fontMenu) { return; }
+      var willOpen = fontMenu.hidden;
+      fontMenu.hidden = !willOpen;
+      event.currentTarget.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+    on('[data-font-set]', 'click', function (event) {
+      setFontSize(event.currentTarget.getAttribute('data-font-set'));
+    });
+    document.addEventListener('click', function (event) {
+      if (!fontMenu || fontMenu.hidden) { return; }
+      if (fontMenu.contains(event.target)) { return; }
+      if (event.target.closest && event.target.closest('[data-font-menu]')) { return; }
+      closeFontMenu();
+    });
+    syncFontButtons();
+
+    /* ---------------- نوار کناری موبایل (کشویی) ---------------- */
     var sidebar = document.getElementById('sidebar');
     var backdrop = document.querySelector('.sidebar-backdrop');
+    var menuButtons = document.querySelectorAll('[data-open-sidebar]');
 
     function openSidebar() {
       if (sidebar) { sidebar.classList.add('open'); }
       if (backdrop) { backdrop.classList.add('show'); }
+      document.body.classList.add('sidebar-open');
+      menuButtons.forEach(function (button) { button.setAttribute('aria-expanded', 'true'); });
     }
     function closeSidebar() {
       if (sidebar) { sidebar.classList.remove('open'); }
       if (backdrop) { backdrop.classList.remove('show'); }
+      document.body.classList.remove('sidebar-open');
+      menuButtons.forEach(function (button) { button.setAttribute('aria-expanded', 'false'); });
     }
-    on('[data-open-sidebar]', 'click', openSidebar);
-    on('[data-close-sidebar]', 'click', closeSidebar);
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') { closeSidebar(); }
+    on('[data-open-sidebar]', 'click', function (event) {
+      event.stopPropagation();
+      if (sidebar && sidebar.classList.contains('open')) { closeSidebar(); }
+      else { openSidebar(); }
     });
+    on('[data-close-sidebar]', 'click', closeSidebar);
+
+    // با انتخاب هر لینک، منو بسته شود تا نیمه‌باز نماند
+    if (sidebar) {
+      sidebar.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', closeSidebar);
+      });
+    }
+    // اگر صفحه بزرگ شد (چرخش گوشی یا تبلت) وضعیت کشویی پاک شود
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      if (resizeTimer) { clearTimeout(resizeTimer); }
+      resizeTimer = setTimeout(function () {
+        if (window.innerWidth >= 1024) { closeSidebar(); }
+        closeFontMenu();
+      }, 120);
+    });
+    window.addEventListener('orientationchange', closeSidebar);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') { closeSidebar(); closeFontMenu(); }
+    });
+    closeSidebar(); // وضعیت اولیه قطعی
 
     /* ---------------- بستن پیام‌ها ---------------- */
     on('[data-dismiss]', 'click', function (event) {

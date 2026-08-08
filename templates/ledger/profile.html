@@ -40,11 +40,26 @@
       <button class="btn btn-primary" type="submit">{% icon "check" %} تغییر رمز</button>
     </form>
 
-    <div class="card-head"><h2>{% icon "moon" %} ظاهر برنامه</h2></div>
-    <p class="muted">
-      برای تغییر بین حالت روشن و تیره از دکمه ماه/خورشید در نوار بالا استفاده کنید.
-      انتخاب شما در همین مرورگر ذخیره می‌شود.
+    <div class="card-head"><h2>{% icon "font-size" %} اندازه متن</h2></div>
+    <p class="muted">اگر متن‌ها برایتان کوچک است، اندازه بزرگ‌تر را انتخاب کنید.</p>
+    <div class="font-size-grid">
+      <button class="font-size-btn" type="button" data-font-set="sm"><span class="fs-a fs-a-sm">آ</span><small>کوچک</small></button>
+      <button class="font-size-btn" type="button" data-font-set="md"><span class="fs-a fs-a-md">آ</span><small>معمولی</small></button>
+      <button class="font-size-btn" type="button" data-font-set="lg"><span class="fs-a fs-a-lg">آ</span><small>بزرگ</small></button>
+      <button class="font-size-btn" type="button" data-font-set="xl"><span class="fs-a fs-a-xl">آ</span><small>خیلی بزرگ</small></button>
+      <button class="font-size-btn" type="button" data-font-set="xxl"><span class="fs-a fs-a-xxl">آ</span><small>بزرگ‌ترین</small></button>
+    </div>
+    <p class="field-help">
+      این نمونه با اندازه انتخابی نمایش داده می‌شود:
+      <span class="font-sample">هزینه میلگرد ۱۲۰,۰۰۰,۰۰۰ تومان — ۱۷ مرداد</span>
     </p>
+
+    <div class="card-head"><h2>{% icon "moon" %} حالت روشن و تیره</h2></div>
+    <p class="muted">حالت تیره برای شب و محیط کم‌نور راحت‌تر است.</p>
+    <div class="theme-grid">
+      <button class="theme-btn" type="button" data-theme-set="light">{% icon "sun" %} روشن</button>
+      <button class="theme-btn" type="button" data-theme-set="dark">{% icon "moon" %} تیره</button>
+    </div>
 
     <div class="card-head"><h2>{% icon "mic" %} ورودی صوتی</h2></div>
     <p class="muted" id="voice-status-box">
