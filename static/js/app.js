@@ -19,31 +19,111 @@
 
   document.addEventListener('DOMContentLoaded', function () {
 
-    /* ---------------- تم روشن/تیره ---------------- */
-    on('[data-theme-toggle]', 'click', function () {
-      var root = document.documentElement;
-      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      try { localStorage.setItem('khone-theme', next); } catch (e) {}
-    });
+    var root = document.documentElement;
 
-    /* ---------------- نوار کناری موبایل ---------------- */
+    /* ---------------- تم روشن/تیره ---------------- */
+    function setTheme(value) {
+      root.setAttribute('data-theme', value);
+      try { localStorage.setItem('khone-theme', value); } catch (e) {}
+      syncThemeButtons();
+    }
+    function syncThemeButtons() {
+      var current = root.getAttribute('data-theme') || 'light';
+      document.querySelectorAll('[data-theme-set]').forEach(function (button) {
+        button.classList.toggle('is-active', button.getAttribute('data-theme-set') === current);
+      });
+    }
+    on('[data-theme-toggle]', 'click', function () {
+      setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+    on('[data-theme-set]', 'click', function (event) {
+      setTheme(event.currentTarget.getAttribute('data-theme-set'));
+    });
+    syncThemeButtons();
+
+    /* ---------------- اندازه متن (برای خوانایی بیشتر) ---------------- */
+    var FONT_SIZES = ['sm', 'md', 'lg', 'xl', 'xxl'];
+    var fontMenu = document.getElementById('font-menu');
+
+    function setFontSize(value) {
+      if (FONT_SIZES.indexOf(value) === -1) { value = 'md'; }
+      root.setAttribute('data-font', value);
+      try { localStorage.setItem('khone-font', value); } catch (e) {}
+      syncFontButtons();
+    }
+    function syncFontButtons() {
+      var current = root.getAttribute('data-font') || 'md';
+      document.querySelectorAll('[data-font-set]').forEach(function (button) {
+        button.classList.toggle('is-active', button.getAttribute('data-font-set') === current);
+      });
+    }
+    function closeFontMenu() {
+      if (fontMenu) { fontMenu.hidden = true; }
+      document.querySelectorAll('[data-font-menu]').forEach(function (button) {
+        button.setAttribute('aria-expanded', 'false');
+      });
+    }
+    on('[data-font-menu]', 'click', function (event) {
+      if (!fontMenu) { return; }
+      var willOpen = fontMenu.hidden;
+      fontMenu.hidden = !willOpen;
+      event.currentTarget.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+    on('[data-font-set]', 'click', function (event) {
+      setFontSize(event.currentTarget.getAttribute('data-font-set'));
+    });
+    document.addEventListener('click', function (event) {
+      if (!fontMenu || fontMenu.hidden) { return; }
+      if (fontMenu.contains(event.target)) { return; }
+      if (event.target.closest && event.target.closest('[data-font-menu]')) { return; }
+      closeFontMenu();
+    });
+    syncFontButtons();
+
+    /* ---------------- نوار کناری موبایل (کشویی) ---------------- */
     var sidebar = document.getElementById('sidebar');
     var backdrop = document.querySelector('.sidebar-backdrop');
+    var menuButtons = document.querySelectorAll('[data-open-sidebar]');
 
     function openSidebar() {
       if (sidebar) { sidebar.classList.add('open'); }
       if (backdrop) { backdrop.classList.add('show'); }
+      document.body.classList.add('sidebar-open');
+      menuButtons.forEach(function (button) { button.setAttribute('aria-expanded', 'true'); });
     }
     function closeSidebar() {
       if (sidebar) { sidebar.classList.remove('open'); }
       if (backdrop) { backdrop.classList.remove('show'); }
+      document.body.classList.remove('sidebar-open');
+      menuButtons.forEach(function (button) { button.setAttribute('aria-expanded', 'false'); });
     }
-    on('[data-open-sidebar]', 'click', openSidebar);
-    on('[data-close-sidebar]', 'click', closeSidebar);
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') { closeSidebar(); }
+    on('[data-open-sidebar]', 'click', function (event) {
+      event.stopPropagation();
+      if (sidebar && sidebar.classList.contains('open')) { closeSidebar(); }
+      else { openSidebar(); }
     });
+    on('[data-close-sidebar]', 'click', closeSidebar);
+
+    // با انتخاب هر لینک، منو بسته شود تا نیمه‌باز نماند
+    if (sidebar) {
+      sidebar.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', closeSidebar);
+      });
+    }
+    // اگر صفحه بزرگ شد (چرخش گوشی یا تبلت) وضعیت کشویی پاک شود
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      if (resizeTimer) { clearTimeout(resizeTimer); }
+      resizeTimer = setTimeout(function () {
+        if (window.innerWidth >= 1024) { closeSidebar(); }
+        closeFontMenu();
+      }, 120);
+    });
+    window.addEventListener('orientationchange', closeSidebar);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') { closeSidebar(); closeFontMenu(); }
+    });
+    closeSidebar(); // وضعیت اولیه قطعی
 
     /* ---------------- بستن پیام‌ها ---------------- */
     on('[data-dismiss]', 'click', function (event) {
@@ -82,6 +162,8 @@
     document.querySelectorAll('[data-amount]').forEach(function (input) {
       input.addEventListener('input', function () {
         var hasWords = /[\u0600-\u06FF]/.test(input.value);
+        // اگر کاربر با صدا/کیبورد فارسی حرف نوشت، جهت فیلد راست‌به‌چپ شود
+        input.style.direction = hasWords ? 'rtl' : 'ltr';
         if (!hasWords) { formatAmountInput(input); }
         updateAmountWords();
       });
@@ -100,12 +182,18 @@
 
     function updateAmountWords() {
       if (!amountWordsBox || !mainAmountInput || !window.KhoneNumber) { return; }
-      var value = window.KhoneNumber.parse(mainAmountInput.value);
+      var raw = mainAmountInput.value;
+      var value = window.KhoneNumber.parse(raw);
       if (value === null) {
         amountWordsBox.textContent = '';
+        amountWordsBox.classList.remove('is-converted');
         return;
       }
-      amountWordsBox.textContent = window.KhoneNumber.toWords(value) + ' تومان';
+      var hasWords = /[\u0600-\u06FF]/.test(raw);
+      amountWordsBox.classList.toggle('is-converted', hasWords);
+      amountWordsBox.textContent = hasWords
+        ? window.KhoneNumber.format(value, true) + ' تومان  (' + window.KhoneNumber.toWords(value) + ')'
+        : window.KhoneNumber.toWords(value) + ' تومان';
     }
     updateAmountWords();
 
@@ -191,6 +279,27 @@
       });
     });
 
+    /* ---------------- جایگزین :has() برای مرورگرهای قدیمی‌تر ---------------- */
+    function syncCheckedClass(selector, wrapperSelector) {
+      document.querySelectorAll(selector).forEach(function (input) {
+        function apply() {
+          var group = input.name
+            ? document.querySelectorAll('input[name="' + input.name + '"]')
+            : [input];
+          Array.prototype.forEach.call(group, function (member) {
+            var wrapper = member.closest(wrapperSelector);
+            if (wrapper) { wrapper.classList.toggle('is-checked', member.checked); }
+          });
+        }
+        input.addEventListener('change', apply);
+        apply();
+      });
+    }
+    syncCheckedClass('.kind-option input', '.kind-option');
+    syncCheckedClass('.check-chip input', '.check-chip');
+    syncCheckedClass('.icon-tile input', '.icon-tile');
+    syncCheckedClass('.color-swatch input', '.color-swatch');
+
     /* ---------------- انتخاب سریع دسته‌بندی ---------------- */
     var categorySelect = document.querySelector('#tx-form select[name="category"]');
 
@@ -270,7 +379,7 @@
 
         var body = new FormData();
         body.append('name', name);
-        body.append('icon', (iconInput && iconInput.value) || '🧱');
+        body.append('icon', (iconInput && iconInput.value) || 'box');
         body.append('kind', kind);
 
         saveCategoryBtn.disabled = true;
@@ -300,6 +409,7 @@
                 option.textContent = data.label;
                 option.setAttribute('data-kind', data.kind || kind);
                 categorySelect.appendChild(option);
+                addCategoryChip(data);
               }
               categorySelect.value = String(data.id);
               categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -307,7 +417,7 @@
             if (messageBox) {
               messageBox.textContent = data.existing
                 ? 'این دسته از قبل وجود داشت و انتخاب شد.'
-                : 'دسته «' + name + '» ساخته و انتخاب شد ✓';
+                : 'دسته «' + name + '» ساخته و انتخاب شد';
             }
             if (nameInput) { nameInput.value = ''; }
             setTimeout(function () { if (newcatBox) { newcatBox.hidden = true; } }, 1200);
@@ -319,15 +429,62 @@
       });
     }
 
-    /* ---------------- انتخابگر ایموجی ---------------- */
-    on('[data-emoji]', 'click', function (event) {
-      var button = event.currentTarget;
-      var target = document.querySelector(button.getAttribute('data-target'));
-      if (target) {
-        target.value = button.getAttribute('data-emoji');
-        target.dispatchEvent(new Event('input', { bubbles: true }));
+    /* ---------------- پیش‌نمایش آیکن دسته جدید ---------------- */
+    var newcatIconSelect = document.getElementById('newcat-icon');
+    var newcatPreview = document.getElementById('newcat-preview');
+
+    function setUseHref(svgWrapper, key) {
+      if (!svgWrapper) { return; }
+      var use = svgWrapper.querySelector('use');
+      if (!use) { return; }
+      use.setAttribute('href', '#i-' + key);
+      use.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#i-' + key);
+    }
+
+    function updateNewcatPreview() {
+      if (!newcatIconSelect) { return; }
+      setUseHref(newcatPreview, newcatIconSelect.value || 'box');
+    }
+    if (newcatIconSelect) {
+      newcatIconSelect.addEventListener('change', updateNewcatPreview);
+      updateNewcatPreview();
+    }
+
+    /* ---------------- افزودن چیپ دسته جدید بعد از ساخت سریع ---------------- */
+    function addCategoryChip(data) {
+      var container = document.getElementById('cat-quick');
+      if (!container || !data) { return; }
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip cat-chip';
+      chip.setAttribute('data-cat-id', String(data.id));
+      chip.setAttribute('data-cat-kind', data.kind || 'expense');
+      if (data.color) { chip.style.setProperty('--chip-color', data.color); }
+      chip.innerHTML =
+        '<svg class="icon icon-sm" aria-hidden="true"><use href="#i-' +
+        (data.icon || 'box') + '"></use></svg> ';
+      chip.appendChild(document.createTextNode(data.label || ''));
+      chip.addEventListener('click', function () {
+        if (!categorySelect) { return; }
+        categorySelect.value = chip.getAttribute('data-cat-id');
+        categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+        syncCategoryChips();
+      });
+      container.appendChild(chip);
+    }
+
+    /* ---------------- انتخابگر آیکن در فرم دسته‌بندی ---------------- */
+    var iconTiles = document.querySelectorAll('.icon-picker .icon-tile input');
+    if (iconTiles.length) {
+      // آیکن انتخاب‌شده را در دید کاربر قرار می‌دهد
+      var checked = document.querySelector('.icon-picker .icon-tile input:checked');
+      if (checked && checked.closest) {
+        var tile = checked.closest('.icon-tile');
+        if (tile && tile.scrollIntoView) {
+          try { tile.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {}
+        }
       }
-    });
+    }
 
     /* ---------------- جلوگیری از ارسال دوباره فرم ---------------- */
     document.querySelectorAll('form').forEach(function (form) {

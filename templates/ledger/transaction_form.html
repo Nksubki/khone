@@ -19,7 +19,13 @@
       {% for radio in form.kind %}
       <label class="kind-option kind-{{ radio.data.value }}">
         {{ radio.tag }}
-        <span>{% if radio.data.value == 'expense' %}💸 هزینه{% else %}💰 دریافت / واریز{% endif %}</span>
+        <span>
+          {% if radio.data.value == 'expense' %}
+            {% icon "arrow-down-circle" %} هزینه
+          {% else %}
+            {% icon "arrow-up-circle" %} دریافت / واریز
+          {% endif %}
+        </span>
       </label>
       {% endfor %}
     </div>
@@ -35,17 +41,19 @@
     <div class="input-with-mic">
       {{ form.amount }}
       <button class="mic-btn" type="button" data-voice="amount"
-              data-target="#{{ form.amount.id_for_label }}" title="گفتن مبلغ با صدا">
-        <span class="mic-icon">🎤</span>
+              data-target="#{{ form.amount.id_for_label }}" title="گفتن مبلغ با صدا"
+              aria-label="گفتن مبلغ با صدا">
+        <span class="mic-icon">{% icon "mic" %}</span>
       </button>
     </div>
     <p class="amount-words" id="amount-words"></p>
+    <p class="voice-note" id="voice-note" hidden></p>
     <div class="quick-amounts">
       <button class="chip" type="button" data-amount-add="1000000">+۱ میلیون</button>
       <button class="chip" type="button" data-amount-add="5000000">+۵ میلیون</button>
       <button class="chip" type="button" data-amount-add="10000000">+۱۰ میلیون</button>
       <button class="chip" type="button" data-amount-add="100000000">+۱۰۰ میلیون</button>
-      <button class="chip chip-clear" type="button" data-amount-clear>پاک کردن</button>
+      <button class="chip chip-clear" type="button" data-amount-clear>{% icon "x" "icon-sm" %} پاک کردن</button>
     </div>
     {% for error in form.amount.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
   </div>
@@ -55,7 +63,7 @@
     <label for="{{ form.category.id_for_label }}">
       دسته‌بندی <span class="req">*</span>
       {% if profile.can_manage_categories %}
-      <button class="link-btn" type="button" data-open-newcat>＋ دسته جدید</button>
+      <button class="link-btn" type="button" data-open-newcat>{% icon "plus" "icon-sm" %} دسته جدید</button>
       {% endif %}
     </label>
     {{ form.category }}
@@ -65,9 +73,14 @@
     <div class="newcat-box" id="newcat-box" hidden>
       <div class="newcat-row">
         <input class="field-input" type="text" id="newcat-name" placeholder="نام دسته جدید (مثلاً داربست)">
-        <input class="field-input icon-input" type="text" id="newcat-icon" value="🧱" maxlength="4">
+        <span class="newcat-preview" id="newcat-preview">{% icon "box" %}</span>
+        <select class="field-input" id="newcat-icon" aria-label="آیکن دسته">
+          {% for key, label in icon_choices %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
         <button class="btn btn-primary btn-sm" type="button" id="newcat-save"
-                data-url="{% url 'ledger:category_quick_create' %}">ساخت</button>
+                data-url="{% url 'ledger:category_quick_create' %}">{% icon "check" %} ساخت</button>
         <button class="btn btn-ghost btn-sm" type="button" data-close-newcat>لغو</button>
       </div>
       <p class="field-help" id="newcat-msg"></p>
@@ -77,7 +90,7 @@
     <div class="cat-quick" id="cat-quick">
       {% for category in categories %}
       <button class="chip cat-chip" type="button" data-cat-id="{{ category.id }}" data-cat-kind="{{ category.kind }}"
-              style="--chip-color: {{ category.color }};">{{ category.icon }} {{ category.name }}</button>
+              style="--chip-color: {{ category.color }};">{% icon category.icon "icon-sm" %} {{ category.name }}</button>
       {% endfor %}
     </div>
   </div>
@@ -88,7 +101,9 @@
       <label for="{{ form.date.id_for_label }}">تاریخ (شمسی) <span class="req">*</span></label>
       <div class="date-wrap">
         {{ form.date }}
-        <button class="icon-btn calendar-btn" type="button" data-open-calendar="#{{ form.date.id_for_label }}" aria-label="تقویم">📅</button>
+        <button class="icon-btn calendar-btn" type="button" data-open-calendar="#{{ form.date.id_for_label }}" aria-label="تقویم">
+          {% icon "calendar" %}
+        </button>
       </div>
       <div class="quick-dates">
         <button class="chip" type="button" data-date-set="0">امروز</button>
@@ -112,8 +127,9 @@
     <div class="input-with-mic textarea-mic">
       {{ form.description }}
       <button class="mic-btn" type="button" data-voice="text"
-              data-target="#{{ form.description.id_for_label }}" title="گفتن توضیحات با صدا">
-        <span class="mic-icon">🎤</span>
+              data-target="#{{ form.description.id_for_label }}" title="گفتن توضیحات با صدا"
+              aria-label="گفتن توضیحات با صدا">
+        <span class="mic-icon">{% icon "mic" %}</span>
       </button>
     </div>
     {% for error in form.description.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
@@ -125,7 +141,9 @@
       <div class="input-with-mic">
         {{ form.payee }}
         <button class="mic-btn mic-sm" type="button" data-voice="text"
-                data-target="#{{ form.payee.id_for_label }}" title="گفتن با صدا">🎤</button>
+                data-target="#{{ form.payee.id_for_label }}" title="گفتن با صدا" aria-label="گفتن با صدا">
+          <span class="mic-icon">{% icon "mic" %}</span>
+        </button>
       </div>
       {% for error in form.payee.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
     </div>
@@ -139,32 +157,48 @@
 
   <div class="form-actions">
     <button class="btn btn-primary btn-lg" type="submit">
-      {% if is_new %}ثبت هزینه{% else %}ذخیره تغییرات{% endif %}
+      {% icon "check" %} {% if is_new %}ثبت هزینه{% else %}ذخیره تغییرات{% endif %}
     </button>
     {% if is_new %}
-    <button class="btn btn-ghost btn-lg" type="submit" name="save_and_new" value="1">ثبت و رکورد بعدی</button>
+    <button class="btn btn-ghost btn-lg" type="submit" name="save_and_new" value="1">
+      {% icon "plus" %} ثبت و رکورد بعدی
+    </button>
     {% endif %}
     <a class="btn btn-ghost" href="{% if is_new %}{% url 'ledger:transaction_list' %}{% else %}{% url 'ledger:transaction_detail' tx.pk %}{% endif %}">انصراف</a>
   </div>
 
   <p class="form-note">
-    راهنما: مبلغ را می‌توانید فارسی بگویید («صد و بیست میلیون») یا بنویسید («۱۲۰۰۰۰۰۰۰»).
+    {% icon "info" "icon-sm" %}
+    مبلغ را می‌توانید فارسی بگویید («صد و بیست میلیون») یا بنویسید («۱۲۰۰۰۰۰۰۰»).
     تاریخ به‌طور پیش‌فرض امروز به وقت تهران است و می‌توانید آن را تغییر دهید.
   </p>
 </form>
 
-<!-- پنل نمایش وضعیت ضبط صدا -->
+<!-- پنل ورودی صوتی -->
 <div class="voice-overlay" id="voice-overlay" hidden>
   <div class="voice-box">
-    <div class="voice-pulse"><span>🎤</span></div>
-    <h3 id="voice-title">بگویید…</h3>
-    <p class="voice-transcript" id="voice-transcript">در حال شنیدن…</p>
+    <div class="voice-pulse" id="voice-pulse">{% icon "mic" "icon-xl" %}</div>
+    <h3 id="voice-title">آماده…</h3>
+    <p class="voice-transcript" id="voice-transcript">در حال آماده‌سازی…</p>
     <p class="voice-parsed" id="voice-parsed"></p>
+
+    <!-- گزینه‌های جایگزین تشخیص گفتار (برای کم کردن خطا) -->
+    <div class="voice-alts" id="voice-alts" hidden>
+      <p class="voice-alts-title">اگر درست نیست، یکی را انتخاب کنید:</p>
+      <div class="voice-alts-list" id="voice-alts-list"></div>
+    </div>
+
     <div class="voice-actions">
-      <button class="btn btn-primary" type="button" id="voice-accept">تأیید</button>
+      <button class="btn btn-primary" type="button" id="voice-accept">{% icon "check" %} تأیید</button>
+      <button class="btn btn-ghost" type="button" id="voice-retry">{% icon "mic" %} تکرار</button>
       <button class="btn btn-ghost" type="button" id="voice-cancel">لغو</button>
     </div>
-    <p class="voice-hint">اگر میکروفون کار نکرد، اجازه دسترسی مرورگر را بدهید (کروم روی اندروید یا سافاری روی آیفون).</p>
+
+    <!-- راهنمای اجازه دسترسی / مشکل مرورگر -->
+    <div class="voice-help" id="voice-help" hidden></div>
+    <button class="btn btn-primary btn-block" type="button" id="voice-permission" data-mode="ask" hidden>
+      {% icon "mic" %} <span class="btn-label">اجازه دسترسی به میکروفون</span>
+    </button>
   </div>
 </div>
 {% endblock %}

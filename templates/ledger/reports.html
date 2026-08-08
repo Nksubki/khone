@@ -28,7 +28,7 @@
 
 <!-- نمودار ۱۲ ماه -->
 <section class="card">
-  <div class="card-head"><h2>روند ۱۲ ماه اخیر ({% if report_kind == 'income' %}دریافتی{% else %}هزینه{% endif %})</h2></div>
+  <div class="card-head"><h2>{% icon "chart" %} روند ۱۲ ماه اخیر ({% if report_kind == 'income' %}دریافتی{% else %}هزینه{% endif %})</h2></div>
   <div class="chart-bars chart-months">
     {% for row in month_series %}
     <div class="chart-col" title="{{ row.full_label }}: {{ row.total|money }} تومان">
@@ -46,7 +46,7 @@
   <!-- تفکیک دسته -->
   <section class="card">
     <div class="card-head">
-      <h2>تفکیک بر اساس دسته‌بندی</h2>
+      <h2>{% icon "folder" %} تفکیک بر اساس دسته‌بندی</h2>
       <small class="muted">جمع: {{ category_total|money }}</small>
     </div>
     {% if category_rows %}
@@ -57,8 +57,9 @@
         {% for row in category_rows %}
         <tr>
           <td>
-            <a class="link" href="{% url_toggle 'cat' row.id %}">
-              <span class="dot" style="background: {{ row.color }};"></span> {{ row.icon }} {{ row.name }}
+            <a class="link link-row" href="{% url_toggle 'cat' row.id %}">
+              <span class="dot" style="background: {{ row.color }};"></span>
+              {% icon row.icon "icon-sm" %} {{ row.name }}
             </a>
           </td>
           <td class="num">{{ row.total|money }}</td>
@@ -77,7 +78,7 @@
 
   <!-- تفکیک کاربر -->
   <section class="card">
-    <div class="card-head"><h2>تفکیک بر اساس کاربر</h2></div>
+    <div class="card-head"><h2>{% icon "users" %} تفکیک بر اساس کاربر</h2></div>
     {% if user_rows %}
     <div class="table-wrap">
       <table class="table">
@@ -103,7 +104,7 @@
 
 <div class="grid-2">
   <section class="card">
-    <div class="card-head"><h2>تفکیک بر اساس پروژه</h2></div>
+    <div class="card-head"><h2>{% icon "building" %} تفکیک بر اساس پروژه</h2></div>
     {% if project_rows %}
     <div class="table-wrap">
       <table class="table">
@@ -124,7 +125,7 @@
   </section>
 
   <section class="card">
-    <div class="card-head"><h2>تفکیک بر اساس نحوه پرداخت</h2></div>
+    <div class="card-head"><h2>{% icon "wallet" %} تفکیک بر اساس نحوه پرداخت</h2></div>
     {% if payment_rows %}
     <div class="table-wrap">
       <table class="table">
@@ -146,7 +147,7 @@
 </div>
 
 <section class="card">
-  <div class="card-head"><h2>۱۰ رکورد بزرگ در این بازه</h2></div>
+  <div class="card-head"><h2>{% icon "receipt" %} ۱۰ رکورد بزرگ در این بازه</h2></div>
   {% if biggest %}
   <div class="tx-list">
     {% for tx in biggest %}{% include "ledger/partials/_tx_row.html" %}{% endfor %}

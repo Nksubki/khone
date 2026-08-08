@@ -33,6 +33,20 @@ CSRF_TRUSTED_ORIGINS = [
     if o.strip()
 ]
 
+# تونل‌های رایگان HTTPS (برای فعال شدن میکروفون روی گوشی).
+# مرورگرها ورودی صوتی را فقط در آدرس امن اجازه می‌دهند؛ با یکی از این تونل‌ها
+# می‌توانید برنامه محلی را با آدرس https باز کنید و میکروفون کار می‌کند.
+DEV_TUNNEL_ORIGINS = [
+    "https://*.trycloudflare.com",
+    "https://*.ngrok-free.app",
+    "https://*.ngrok.io",
+    "https://*.loca.lt",
+    "https://*.serveo.net",
+    "https://*.tail-scale.ts.net",
+]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS + DEV_TUNNEL_ORIGINS
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

@@ -4,19 +4,26 @@
 {% block content %}
 <section class="card">
   <div class="card-head">
-    <h2>پروژه‌ها</h2>
-    {% if can_manage %}<a class="btn btn-primary btn-sm" href="{% url 'ledger:project_create' %}">＋ پروژه جدید</a>{% endif %}
+    <h2>{% icon "building" %} پروژه‌ها</h2>
+    {% if can_manage %}<a class="btn btn-primary btn-sm" href="{% url 'ledger:project_create' %}">{% icon "plus" %} پروژه جدید</a>{% endif %}
   </div>
-  <p class="hint-box">اگر بیش از یک ساختمان/کارگاه دارید، برای هرکدام یک پروژه بسازید تا هزینه‌ها جدا محاسبه شود.</p>
+  <p class="hint-box">
+    {% icon "info" "icon-sm" %}
+    اگر بیش از یک ساختمان/کارگاه دارید، برای هرکدام یک پروژه بسازید تا هزینه‌ها جدا محاسبه شود.
+  </p>
 
   <div class="project-grid project-grid-lg">
     {% for row in rows %}
     <div class="card project-card {% if not row.obj.is_active %}is-off{% endif %}">
       <div class="project-head">
-        <h3>🏢 {{ row.obj.name }}</h3>
-        {% if can_manage %}<a class="icon-btn" href="{% url 'ledger:project_edit' row.obj.id %}" title="ویرایش">✏️</a>{% endif %}
+        <h3>{% icon "building" %} {{ row.obj.name }}</h3>
+        {% if can_manage %}
+        <a class="icon-btn" href="{% url 'ledger:project_edit' row.obj.id %}" title="ویرایش" aria-label="ویرایش">
+          {% icon "pencil" %}
+        </a>
+        {% endif %}
       </div>
-      {% if row.obj.address %}<p class="muted">📍 {{ row.obj.address }}</p>{% endif %}
+      {% if row.obj.address %}<p class="muted">{% icon "pin" "icon-sm" %} {{ row.obj.address }}</p>{% endif %}
 
       <div class="project-stats">
         <div><span class="muted">هزینه</span><strong class="amount-out">{{ row.expense|money }}</strong></div>
@@ -34,13 +41,15 @@
 
       {% if row.obj.description %}<p class="muted pre-line">{{ row.obj.description }}</p>{% endif %}
 
-      <a class="btn btn-ghost btn-block btn-sm" href="{% url 'ledger:transaction_list' %}?range=all&project={{ row.obj.id }}">مشاهده هزینه‌ها</a>
+      <a class="btn btn-ghost btn-block btn-sm" href="{% url 'ledger:transaction_list' %}?range=all&project={{ row.obj.id }}">
+        {% icon "receipt" %} مشاهده هزینه‌ها
+      </a>
     </div>
     {% empty %}
     <div class="empty-state">
-      <span class="empty-icon">🏢</span>
+      <span class="empty-icon">{% icon "building" %}</span>
       <p>پروژه‌ای ثبت نشده است. (ثبت هزینه بدون پروژه هم ممکن است.)</p>
-      {% if can_manage %}<a class="btn btn-primary" href="{% url 'ledger:project_create' %}">ساخت پروژه</a>{% endif %}
+      {% if can_manage %}<a class="btn btn-primary" href="{% url 'ledger:project_create' %}">{% icon "plus" %} ساخت پروژه</a>{% endif %}
     </div>
     {% endfor %}
   </div>

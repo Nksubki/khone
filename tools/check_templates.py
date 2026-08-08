@@ -14,6 +14,7 @@
 import os
 import re
 import sys
+from xml.etree import ElementTree
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES_DIR = os.path.join(ROOT, "templates")
@@ -42,6 +43,8 @@ fa_source = read(os.path.join(LEDGER_DIR, "templatetags", "fa.py"))
 custom_filters = set(re.findall(r'@register\.filter\(name="([^"]+)"\)', fa_source))
 custom_filters |= set(re.findall(r"@register\.filter\s*\ndef (\w+)", fa_source))
 custom_tags = set(re.findall(r"@register\.simple_tag[^\n]*\ndef (\w+)", fa_source))
+custom_tags |= set(re.findall(r'@register\.simple_tag\([^)]*name="([^"]+)"', fa_source))
+custom_tags |= set(re.findall(r'@register\.inclusion_tag\([^)]*name="([^"]+)"', fa_source))
 
 BUILTIN_FILTERS = {
     "add", "addslashes", "capfirst", "center", "cut", "date", "default",
@@ -186,7 +189,87 @@ for relative in template_files:
         if not os.path.exists(os.path.join(ROOT, "static", name)):
             errors.append("%s: فایل استاتیک «%s» موجود نیست." % (relative, name))
 
-print("۵) کلاس‌های CSS استفاده‌شده در قالب‌ها")
+print("۵) آیکن‌های SVG")
+sprite_source = read(os.path.join(TEMPLATES_DIR, "ledger", "partials", "_sprite.html"))
+sprite_keys = set(re.findall(r'<symbol id="i-([\w-]+)"', sprite_source))
+print("   %d آیکن در اسپرایت" % len(sprite_keys))
+
+# اعتبارسنجی XML اسپرایت و هر symbol
+SVG_NS = "{http://www.w3.org/2000/svg}"
+ALLOWED_SHAPES = {"path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "g"}
+try:
+    sprite_root = ElementTree.fromstring(sprite_source[sprite_source.index("<svg"):])
+    symbols = sprite_root.findall(SVG_NS + "symbol")
+    if len(symbols) != len(sprite_keys):
+        errors.append("تعداد symbolها با شناسه‌های یافت‌شده جور نیست.")
+    for symbol in symbols:
+        name = symbol.get("id")
+        if not symbol.get("viewBox"):
+            errors.append("آیکن %s ویژگی viewBox ندارد." % name)
+        if not list(symbol):
+            errors.append("آیکن %s خالی است." % name)
+        for shape in symbol:
+            tag = shape.tag.replace(SVG_NS, "")
+            if tag not in ALLOWED_SHAPES:
+                errors.append("آیکن %s عنصر ناشناخته <%s> دارد." % (name, tag))
+            if tag == "path" and not (shape.get("d") or "").strip().startswith(("M", "m")):
+                errors.append("آیکن %s مسیر نامعتبر دارد." % name)
+except (ElementTree.ParseError, ValueError) as exc:
+    errors.append("اسپرایت SVG معتبر نیست: %s" % exc)
+
+favicon_path = os.path.join(ROOT, "static", "img", "favicon.svg")
+if os.path.exists(favicon_path):
+    try:
+        ElementTree.fromstring(read(favicon_path))
+    except ElementTree.ParseError as exc:
+        errors.append("favicon.svg معتبر نیست: %s" % exc)
+else:
+    errors.append("static/img/favicon.svg موجود نیست.")
+
+sys.path.insert(0, ROOT)
+from ledger.icons import CATEGORY_ICONS, ICON_KEYS  # noqa: E402
+
+for key in sorted(ICON_KEYS):
+    if key not in sprite_keys:
+        errors.append("آیکن «%s» در icons.py هست ولی در اسپرایت نیست." % key)
+print("   %d آیکن اعلام‌شده در icons.py (%d آیکن دسته‌بندی)" % (len(ICON_KEYS), len(CATEGORY_ICONS)))
+
+# آیکن‌های استفاده‌شده با نام ثابت در قالب‌ها
+for relative in template_files:
+    source = read(os.path.join(TEMPLATES_DIR, relative))
+    for key in re.findall(r'{%\s*icon\s+"([\w-]+)"', source):
+        if key not in sprite_keys:
+            errors.append("%s: آیکن «%s» در اسپرایت نیست." % (relative, key))
+
+# ارجاع‌های #i-KEY در جاوااسکریپت
+for js_name in os.listdir(os.path.join(ROOT, "static", "js")):
+    if not js_name.endswith(".js"):
+        continue
+    js_source = read(os.path.join(ROOT, "static", "js", js_name))
+    for key in re.findall(r"#i-([\w-]+)", js_source):
+        if key not in sprite_keys:
+            errors.append("static/js/%s: آیکن «%s» در اسپرایت نیست." % (js_name, key))
+
+# هشدار برای ایموجی‌های جامانده
+EMOJI_RANGE = re.compile(
+    "[\U0001F300-\U0001FAFF\U00002600-\U000027BF\U0001F000-\U0001F2FF\uFE0F\u2795-\u2797]"
+)
+for relative in template_files:
+    if relative.endswith("_sprite.html"):
+        continue
+    source = read(os.path.join(TEMPLATES_DIR, relative))
+    found = EMOJI_RANGE.findall(source)
+    if found:
+        warnings.append("%s: ایموجی جامانده %s" % (relative, "".join(sorted(set(found)))))
+for js_name in os.listdir(os.path.join(ROOT, "static", "js")):
+    if not js_name.endswith(".js"):
+        continue
+    js_source = read(os.path.join(ROOT, "static", "js", js_name))
+    found = EMOJI_RANGE.findall(js_source)
+    if found:
+        warnings.append("static/js/%s: ایموجی جامانده %s" % (js_name, "".join(sorted(set(found)))))
+
+print("۶) کلاس‌های CSS استفاده‌شده در قالب‌ها")
 css_source = read(os.path.join(ROOT, "static", "css", "app.css"))
 used_classes = set()
 for relative in template_files:

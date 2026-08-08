@@ -8,6 +8,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+from .icons import DEFAULT_ICON, safe_icon
 from .models import (
     KIND_CHOICES,
     KIND_EXPENSE,
@@ -276,13 +277,6 @@ class TransactionForm(forms.ModelForm):
 # --------------------------------------------------------------------------- #
 #  دسته‌بندی و پروژه
 # --------------------------------------------------------------------------- #
-EMOJI_SUGGESTIONS = [
-    "🧱", "🏗️", "🪣", "⛰️", "🚧", "👷", "🧰", "💡", "🚰", "🔲",
-    "🚪", "🎨", "🛡️", "🚜", "🚚", "🏛️", "📐", "📦", "🤝", "🏠",
-    "🏦", "💰", "🪟", "🪜", "🔨", "🪛", "🧯", "🌳", "🛋️", "🧾",
-]
-
-
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
@@ -296,10 +290,8 @@ class CategoryForm(forms.ModelForm):
                 }
             ),
             "kind": forms.RadioSelect(attrs={"class": "kind-radio"}),
-            "icon": forms.TextInput(
-                attrs={"class": "field-input icon-input", "maxlength": 8, "placeholder": "🧱"}
-            ),
-            "color": forms.Select(attrs={"class": "field-input color-select"}),
+            "icon": forms.RadioSelect(attrs={"class": "icon-radio"}),
+            "color": forms.RadioSelect(attrs={"class": "color-radio"}),
             "description": forms.TextInput(
                 attrs={"class": "field-input", "placeholder": "توضیح اختیاری"}
             ),
@@ -310,7 +302,8 @@ class CategoryForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["description"].required = False
         self.fields["icon"].required = False
-        self.emoji_suggestions = EMOJI_SUGGESTIONS
+        if not self.instance.pk:
+            self.fields["icon"].initial = DEFAULT_ICON
 
     def clean_name(self):
         name = (self.cleaned_data.get("name") or "").strip()
@@ -324,7 +317,7 @@ class CategoryForm(forms.ModelForm):
         return name
 
     def clean_icon(self):
-        return (self.cleaned_data.get("icon") or "").strip() or "🧱"
+        return safe_icon(self.cleaned_data.get("icon"))
 
 
 class ProjectForm(forms.ModelForm):

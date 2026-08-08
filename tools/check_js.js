@@ -54,6 +54,20 @@ const NUMBER_CASES = [
   ['مبلغ سی و دو میلیون و هشتصد و پنجاه هزار تومان شد', 32850000],
   ['چهارصد و پنجاه میلیون', 450000000],
   ['یک میلیون و پانصد هزار', 1500000],
+  ['یک میلیون و نیم', 1500000],
+  ['یک میلیون ونیم', 1500000],
+  ['دو میلیارد و نیم', 2500000000],
+  ['نیم میلیون', 500000],
+  ['سی صد میلیون', 300000000],
+  ['سه صد و پنجاه هزار', 350000],
+  ['پان صد میلیون', 500000000],
+  ['100.000.000', 100000000],
+  ['۱۲۰,۵۰۰,۰۰۰', 120500000],
+  ['۲/۵ میلیون', 2500000],
+  ['یک میلیارد و دویست و پنجاه میلیون', 1250000000],
+  ['هشتاد و پنج میلیون و چهارصد و پنجاه هزار', 85450000],
+  ['دویست و پنجاه میلیون تومان بابت میلگرد', 250000000],
+  ['لطفا صد میلیون ثبت کن', 100000000],
   ['سلام خوبی', null],
   ['', null]
 ];
@@ -62,7 +76,9 @@ for (const [text, expected] of NUMBER_CASES) {
   check(got === expected, `parse(${JSON.stringify(text)}) = ${got} ≠ ${expected}`);
 }
 
-console.log('۲) نمایش عدد');
+console.log('۲) نمایش عدد و امتیاز گرد بودن');
+check(window.KhoneNumber.roundnessScore(100000000) > window.KhoneNumber.roundnessScore(100000123), 'roundnessScore');
+check(window.KhoneNumber.roundnessScore(0) === 0, 'roundnessScore صفر');
 check(window.KhoneNumber.format(1234567, false) === '1,234,567', 'format latin');
 check(window.KhoneNumber.format(1234567, true) === '۱,۲۳۴,۵۶۷', 'format persian');
 check(window.KhoneNumber.toWords(230500000) === '۲۳۰ میلیون و ۵۰۰ هزار', 'toWords: ' + window.KhoneNumber.toWords(230500000));

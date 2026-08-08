@@ -1,15 +1,20 @@
 """
 تبدیل متن فارسی (تایپی یا گفتاری) به عدد، و نمایش عدد به شکل خوانا.
 
+این ماژول دقیقاً معادل static/js/persian-number.js است تا نتیجه سمت سرور و
+سمت مرورگر یکسان باشد. برای اطمینان: python tools/check_utils.py و node tools/check_js.js
+
 نمونه‌های پشتیبانی‌شده:
-    "100000000"            -> 100000000
-    "۱۰۰,۰۰۰,۰۰۰"          -> 100000000
-    "صد میلیون"            -> 100000000
-    "صد و بیست میلیون"     -> 120000000
-    "دو میلیارد و سیصد میلیون و پانصد هزار تومان" -> 2300500000
-    "۱۰۰ میلیون"           -> 100000000
-    "نیم میلیارد"          -> 500000000
-    "۲.۵ میلیون"           -> 2500000
+    "100000000"                  -> 100000000
+    "۱۰۰,۰۰۰,۰۰۰"                -> 100000000
+    "100.000.000"                -> 100000000
+    "صد میلیون"                  -> 100000000
+    "صد و بیست میلیون"           -> 120000000
+    "سی صد میلیون"               -> 300000000   (اصلاح خطای رایج تشخیص گفتار)
+    "یک میلیون و نیم"            -> 1500000
+    "نیم میلیارد"                -> 500000000
+    "۲.۵ میلیون" / "۲/۵ میلیون"  -> 2500000
+    "دویست و پنجاه میلیون تومان بابت میلگرد" -> 250000000
 """
 from __future__ import annotations
 
@@ -72,27 +77,36 @@ UNITS = {
 
 FRACTIONS = {
     "نیم": 0.5,
+    "ونیم": 0.5,
     "ربع": 0.25,
 }
 
 SCALES = {
     "هزار": 1_000,
     "هزارتا": 1_000,
+    "هزاری": 1_000,
+    "هزارتومان": 1_000,
+    "هزارتومن": 1_000,
     "میلیون": 1_000_000,
     "ملیون": 1_000_000,
+    "میلیونی": 1_000_000,
+    "ملیونی": 1_000_000,
     "میلیارد": 1_000_000_000,
     "ملیارد": 1_000_000_000,
+    "میلیاردی": 1_000_000_000,
+    "میلیارت": 1_000_000_000,
     "بیلیون": 1_000_000_000,
     "تریلیون": 1_000_000_000_000,
 }
 
-# واژه‌هایی که نادیده گرفته می‌شوند
+# واژه‌هایی که در محاسبه نادیده گرفته می‌شوند
 IGNORED = {
     "و",
     "تومان",
     "تومن",
+    "تومانه",
+    "تومنه",
     "ریال",
-    "هزارتومان",
     "مبلغ",
     "حدود",
     "تقریبا",
@@ -101,16 +115,56 @@ IGNORED = {
     "شده",
     "است",
     "بود",
+    "بشه",
     "کردم",
+    "کن",
+    "بنویس",
+    "ثبت",
+    "لطفا",
+    "لطفاً",
     "دادم",
     "پرداخت",
     "پول",
     "تا",
+    "بابت",
+    "برای",
+    "هزینه",
+    "خرید",
+    "بشود",
+    "میشه",
 }
+
+# اصلاح خطاهای رایج تشخیص گفتار (واژه‌های چندپاره)
+SPLIT_FIXES = (
+    ("یک صد", "صد"),
+    ("دو صد", "دویست"),
+    ("دو یست", "دویست"),
+    ("سه صد", "سیصد"),
+    ("سی صد", "سیصد"),
+    ("چهار صد", "چهارصد"),
+    ("پنج صد", "پانصد"),
+    ("پان صد", "پانصد"),
+    ("پون صد", "پانصد"),
+    ("شش صد", "ششصد"),
+    ("شیش صد", "ششصد"),
+    ("هفت صد", "هفتصد"),
+    ("هشت صد", "هشتصد"),
+    ("نه صد", "نهصد"),
+    ("پان زده", "پانزده"),
+    ("شان زده", "شانزده"),
+    ("و نیم", "ونیم"),
+    ("میلیون ها", "میلیون"),
+    ("میلیارد ها", "میلیارد"),
+)
+
+# سقف منطقی برای مبلغ (یک کوادریلیون تومان)
+MAX_AMOUNT = 10 ** 15
 
 _ZWNJ = "\u200c"
 _CLEAN_RE = re.compile(r"[^\w\s./]", re.UNICODE)
 _NUMERIC_RE = re.compile(r"^\d+(?:\.\d+)?$")
+_THOUSAND_DOT_RE = re.compile(r"^\d{1,3}(?:\.\d{3})+$")
+_SLASH_DECIMAL_RE = re.compile(r"^\d+/\d{1,2}$")
 
 
 def normalize_text(text) -> str:
@@ -125,7 +179,9 @@ def normalize_text(text) -> str:
         .replace("ۀ", "ه")
         .replace("أ", "ا")
         .replace("إ", "ا")
+        .replace("آ", "ا")
         .replace("ؤ", "و")
+        .replace("٫", ".")
         .replace("\u064b", "")
         .replace("\u064c", "")
         .replace("\u064d", "")
@@ -135,23 +191,46 @@ def normalize_text(text) -> str:
         .replace("\u0651", "")
         .replace("\u0652", "")
     )
-    return out.strip()
+    return re.sub(r"\s+", " ", out).strip()
+
+
+def _apply_split_fixes(text: str) -> str:
+    padded = " %s " % text
+    for src, dst in SPLIT_FIXES:
+        padded = padded.replace(" %s " % src, " %s " % dst)
+    return padded.strip()
+
+
+def _numeric_value(token: str):
+    """مقدار عددی یک توکن رقمی (با پشتیبانی از جداکننده هزارگان و اعشار)."""
+    if _THOUSAND_DOT_RE.match(token):
+        return float(token.replace(".", ""))
+    if _NUMERIC_RE.match(token):
+        return float(token)
+    if _SLASH_DECIMAL_RE.match(token):
+        return float(token.replace("/", "."))
+    return None
 
 
 def _tokenize(text: str):
     text = normalize_text(text)
     text = text.replace("،", " ").replace(",", "")
-    text = text.replace(_ZWNJ, "")
+    text = text.replace(_ZWNJ, " ")
     text = _CLEAN_RE.sub(" ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = _apply_split_fixes(text)
+
     tokens = []
     for raw in text.split():
         token = raw.strip(".")
         if not token:
             continue
-        # چسبیدن «و» به کلمه بعدی: مثل «وبیست»
-        if len(token) > 2 and token.startswith("و") and token[1:] in UNITS:
-            tokens.append(token[1:])
-            continue
+        # چسبیدن «و» به کلمه بعدی: مثل «وبیست» یا «ونیم»
+        if len(token) > 2 and token.startswith("و"):
+            rest = token[1:]
+            if rest in UNITS or rest in SCALES:
+                tokens.append(rest)
+                continue
         tokens.append(token)
     return tokens
 
@@ -164,7 +243,8 @@ def parse_amount(text):
     if text is None:
         return None
     if isinstance(text, (int, float)):
-        return int(round(text))
+        value = int(round(text))
+        return value if 0 < value <= MAX_AMOUNT else None
 
     tokens = _tokenize(text)
     if not tokens:
@@ -172,14 +252,16 @@ def parse_amount(text):
 
     total = 0.0
     current = 0.0
+    last_scale = 0
     found = False
 
     for token in tokens:
         if token in IGNORED:
             continue
 
-        if _NUMERIC_RE.match(token):
-            current += float(token)
+        numeric = _numeric_value(token)
+        if numeric is not None:
+            current += numeric
             found = True
             continue
 
@@ -189,7 +271,12 @@ def parse_amount(text):
             continue
 
         if token in FRACTIONS:
-            current = current + FRACTIONS[token] if current else FRACTIONS[token]
+            fraction = FRACTIONS[token]
+            if current == 0 and last_scale >= 1000:
+                # «یک میلیون و نیم» → نیمِ آخرین مقیاس
+                total += fraction * last_scale
+            else:
+                current = current + fraction if current else fraction
             found = True
             continue
 
@@ -200,6 +287,7 @@ def parse_amount(text):
             current *= scale
             total += current
             current = 0.0
+            last_scale = scale
             found = True
             continue
 
@@ -208,17 +296,16 @@ def parse_amount(text):
         for word, scale in SCALES.items():
             if token.endswith(word) and len(token) > len(word):
                 head = token[: -len(word)]
-                head_value = None
-                if _NUMERIC_RE.match(head):
-                    head_value = float(head)
-                elif head in UNITS:
+                head_value = _numeric_value(head)
+                if head_value is None and head in UNITS:
                     head_value = float(UNITS[head])
-                elif head in FRACTIONS:
+                if head_value is None and head in FRACTIONS:
                     head_value = FRACTIONS[head]
                 if head_value is not None:
                     current = (current + head_value) * scale
                     total += current
                     current = 0.0
+                    last_scale = scale
                     found = True
                     matched = True
                     break
@@ -230,7 +317,7 @@ def parse_amount(text):
         return None
 
     total += current
-    if total <= 0:
+    if total <= 0 or total > MAX_AMOUNT:
         return None
     return int(round(total))
 
@@ -291,3 +378,21 @@ def humanize_amount(value, persian: bool = True) -> str:
     if negative:
         text = "منفی " + text
     return to_persian_digits(text) if persian else text
+
+
+def roundness_score(value) -> int:
+    """
+    امتیاز «گرد بودن» یک مبلغ — برای انتخاب بهترین حدس بین چند نتیجه تشخیص گفتار.
+    مبالغ واقعی هزینه معمولاً گرد هستند (مضرب هزار یا میلیون).
+    """
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return 0
+    if number <= 0:
+        return 0
+    score = 0
+    for scale, points in ((1_000_000, 3), (100_000, 2), (10_000, 1), (1_000, 1)):
+        if number % scale == 0:
+            score += points
+    return score

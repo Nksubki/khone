@@ -1,10 +1,12 @@
 {% load fa %}
 <section class="card filter-card">
   <div class="card-head">
-    <h2>🔎 فیلترها</h2>
+    <h2>{% icon "filter" %} فیلترها</h2>
     <div class="head-actions">
-      <button class="btn btn-ghost btn-sm" type="button" data-toggle-filters>نمایش/پنهان</button>
-      <a class="btn btn-ghost btn-sm" href="{{ request.path }}?range=month">پاک کردن</a>
+      <button class="btn btn-ghost btn-sm" type="button" data-toggle-filters>
+        {% icon "sliders" %} نمایش/پنهان
+      </button>
+      <a class="btn btn-ghost btn-sm" href="{{ request.path }}?range=month">{% icon "x" %} پاک کردن</a>
     </div>
   </div>
 
@@ -20,7 +22,7 @@
   <form class="filter-form" method="get" action="{{ request.path }}" id="filter-form">
     <div class="filter-grid">
       <div class="field">
-        <label for="f-q">جستجو در توضیحات / طرف حساب</label>
+        <label for="f-q">{% icon "search" "icon-sm" %} جستجو در توضیحات / طرف حساب</label>
         <input class="field-input" type="search" id="f-q" name="q" value="{{ filters.q }}" placeholder="مثلاً میلگرد آجدار">
       </div>
 
@@ -34,17 +36,27 @@
       </div>
 
       <div class="field">
-        <label for="f-from">از تاریخ</label>
-        <input class="field-input jalali-date" type="text" id="f-from" name="from" data-jalali-date="1"
-               inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۵/۰۱"
-               value="{{ request.GET.from|default:'' }}">
+        <label for="f-from">{% icon "calendar" "icon-sm" %} از تاریخ</label>
+        <div class="date-wrap">
+          <input class="field-input jalali-date" type="text" id="f-from" name="from" data-jalali-date="1"
+                 inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۵/۰۱"
+                 value="{{ request.GET.from|default:'' }}">
+          <button class="icon-btn calendar-btn" type="button" data-open-calendar="#f-from" aria-label="تقویم">
+            {% icon "calendar" %}
+          </button>
+        </div>
       </div>
 
       <div class="field">
-        <label for="f-to">تا تاریخ</label>
-        <input class="field-input jalali-date" type="text" id="f-to" name="to" data-jalali-date="1"
-               inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۵/۳۱"
-               value="{{ request.GET.to|default:'' }}">
+        <label for="f-to">{% icon "calendar" "icon-sm" %} تا تاریخ</label>
+        <div class="date-wrap">
+          <input class="field-input jalali-date" type="text" id="f-to" name="to" data-jalali-date="1"
+                 inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۵/۳۱"
+                 value="{{ request.GET.to|default:'' }}">
+          <button class="icon-btn calendar-btn" type="button" data-open-calendar="#f-to" aria-label="تقویم">
+            {% icon "calendar" %}
+          </button>
+        </div>
       </div>
 
       <div class="field">
@@ -95,7 +107,7 @@
         {% for category in all_categories %}
         <label class="check-chip" style="--chip-color: {{ category.color }};">
           <input type="checkbox" name="cat" value="{{ category.id }}" {% if category.id in filters.category_ids %}checked{% endif %}>
-          <span>{{ category.icon }} {{ category.name }}</span>
+          <span>{% icon category.icon "icon-sm" %} {{ category.name }}</span>
         </label>
         {% endfor %}
       </div>
@@ -116,9 +128,11 @@
     <input type="hidden" name="range" value="{% if filters.range_key == 'custom' %}custom{% else %}{{ filters.range_key }}{% endif %}">
 
     <div class="filter-actions">
-      <button class="btn btn-primary" type="submit">اعمال فیلتر</button>
+      <button class="btn btn-primary" type="submit">{% icon "check" %} اعمال فیلتر</button>
       <a class="btn btn-ghost" href="{{ request.path }}?range=month">بازنشانی</a>
-      <a class="btn btn-ghost" href="{% url 'ledger:transaction_export' %}?{{ request.GET.urlencode }}">⬇️ خروجی اکسل (CSV)</a>
+      <a class="btn btn-ghost" href="{% url 'ledger:transaction_export' %}?{{ request.GET.urlencode }}">
+        {% icon "download" %} خروجی اکسل (CSV)
+      </a>
     </div>
   </form>
 
@@ -126,7 +140,7 @@
   <div class="active-chips">
     {% for chip in filters.chips %}
       {% if chip.removable %}
-        <a class="chip chip-remove" href="{% url_remove chip.param chip.value %}">{{ chip.label }} ✕</a>
+        <a class="chip chip-remove" href="{% url_remove chip.param chip.value %}">{{ chip.label }} {% icon "x" "icon-sm" %}</a>
       {% else %}
         <span class="chip">{{ chip.label }}</span>
       {% endif %}

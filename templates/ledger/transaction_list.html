@@ -8,23 +8,35 @@
 <!-- خلاصه نتیجه فیلتر -->
 <div class="stat-grid stat-grid-4">
   <div class="card stat-card stat-danger">
-    <div class="stat-label">جمع هزینه‌های فیلترشده</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "arrow-down-circle" %}</span>
+      <div class="stat-label">جمع هزینه‌های فیلترشده</div>
+    </div>
     <div class="stat-value">{{ summary.expense_total|money }} <small>تومان</small></div>
     <div class="stat-sub">{{ summary.expense_total|amount_words }}</div>
     <div class="stat-foot">{{ summary.expense_count|fa }} رکورد</div>
   </div>
   <div class="card stat-card stat-success">
-    <div class="stat-label">جمع دریافتی‌ها</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "arrow-up-circle" %}</span>
+      <div class="stat-label">جمع دریافتی‌ها</div>
+    </div>
     <div class="stat-value">{{ summary.income_total|money }} <small>تومان</small></div>
     <div class="stat-foot">{{ summary.income_count|fa }} رکورد</div>
   </div>
   <div class="card stat-card stat-info">
-    <div class="stat-label">میانگین هر هزینه</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "chart" %}</span>
+      <div class="stat-label">میانگین هر هزینه</div>
+    </div>
     <div class="stat-value">{{ summary.average|money }} <small>تومان</small></div>
     <div class="stat-foot">بازه: {{ filters.range_label }}</div>
   </div>
   <div class="card stat-card stat-neutral">
-    <div class="stat-label">مانده (دریافتی − هزینه)</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "wallet" %}</span>
+      <div class="stat-label">مانده (دریافتی − هزینه)</div>
+    </div>
     <div class="stat-value">{{ summary.balance|money }} <small>تومان</small></div>
     <div class="stat-foot">{{ total_count|fa }} رکورد در این فیلتر</div>
   </div>
@@ -33,12 +45,12 @@
 {% if category_rows %}
 <div class="grid-2">
   <section class="card">
-    <div class="card-head"><h2>تفکیک دسته‌بندی در این فیلتر</h2></div>
+    <div class="card-head"><h2>{% icon "folder" %} تفکیک دسته‌بندی در این فیلتر</h2></div>
     <ul class="rank-list rank-compact">
       {% for row in category_rows %}
       <li>
         <a class="rank-item" href="{% url_toggle 'cat' row.id %}">
-          <span class="rank-icon" style="background: {{ row.color }}22; color: {{ row.color }};">{{ row.icon }}</span>
+          <span class="rank-icon" style="background: {{ row.color }}22; color: {{ row.color }};">{% icon row.icon %}</span>
           <span class="rank-body">
             <span class="rank-top">
               <strong>{{ row.name }}</strong>
@@ -54,7 +66,7 @@
   </section>
 
   <section class="card">
-    <div class="card-head"><h2>تفکیک کاربران در این فیلتر</h2></div>
+    <div class="card-head"><h2>{% icon "users" %} تفکیک کاربران در این فیلتر</h2></div>
     <ul class="rank-list rank-compact">
       {% for row in user_rows %}
       <li>
@@ -79,11 +91,13 @@
 <!-- فهرست رکوردها -->
 <section class="card">
   <div class="card-head">
-    <h2>رکوردها <small class="muted">({{ total_count|fa }})</small></h2>
+    <h2>{% icon "receipt" %} رکوردها <small class="muted">({{ total_count|fa }})</small></h2>
     <div class="head-actions">
-      <a class="btn btn-ghost btn-sm" href="{% url 'ledger:transaction_export' %}?{{ request.GET.urlencode }}">⬇️ CSV</a>
+      <a class="btn btn-ghost btn-sm" href="{% url 'ledger:transaction_export' %}?{{ request.GET.urlencode }}">
+        {% icon "download" %} CSV
+      </a>
       {% if profile.can_add_records %}
-      <a class="btn btn-primary btn-sm" href="{% url 'ledger:transaction_create' %}">＋ ثبت جدید</a>
+      <a class="btn btn-primary btn-sm" href="{% url 'ledger:transaction_create' %}">{% icon "plus" %} ثبت جدید</a>
       {% endif %}
     </div>
   </div>
@@ -95,7 +109,7 @@
   {% include "ledger/partials/_pagination.html" %}
   {% else %}
   <div class="empty-state">
-    <span class="empty-icon">🔍</span>
+    <span class="empty-icon">{% icon "search" %}</span>
     <p>با این فیلتر رکوردی پیدا نشد.</p>
     <a class="btn btn-ghost" href="{{ request.path }}?range=all">نمایش همه زمان‌ها</a>
   </div>

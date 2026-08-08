@@ -28,6 +28,7 @@ from .forms import (
     ResetPasswordForm,
     TransactionForm,
 )
+from .icons import CATEGORY_ICON_CHOICES, safe_icon
 from .models import (
     KIND_EXPENSE,
     KIND_INCOME,
@@ -281,6 +282,7 @@ def transaction_create(request):
             "form": form,
             "is_new": True,
             "categories": Category.objects.filter(is_active=True).order_by("sort_order", "name"),
+            "icon_choices": CATEGORY_ICON_CHOICES,
         },
     )
 
@@ -318,6 +320,7 @@ def transaction_edit(request, pk):
             "is_new": False,
             "tx": transaction,
             "categories": Category.objects.filter(is_active=True).order_by("sort_order", "name"),
+            "icon_choices": CATEGORY_ICON_CHOICES,
         },
     )
 
@@ -553,13 +556,21 @@ def category_quick_create(request):
     """ساخت سریع دسته‌بندی از داخل فرم ثبت هزینه (بدون ترک صفحه)."""
     name = (request.POST.get("name") or "").strip()
     kind = request.POST.get("kind") or KIND_EXPENSE
-    icon = (request.POST.get("icon") or "🧱").strip()[:8]
+    icon = safe_icon(request.POST.get("icon"))
     if not name:
         return JsonResponse({"ok": False, "error": "نام دسته‌بندی خالی است."}, status=400)
     if Category.objects.filter(name__iexact=name).exists():
         category = Category.objects.filter(name__iexact=name).first()
         return JsonResponse(
-            {"ok": True, "existing": True, "id": category.id, "label": category.label}
+            {
+                "ok": True,
+                "existing": True,
+                "id": category.id,
+                "label": category.label,
+                "icon": category.icon,
+                "color": category.color,
+                "kind": category.kind,
+            }
         )
     last = Category.objects.order_by("-sort_order").first()
     category = Category.objects.create(
@@ -571,8 +582,15 @@ def category_quick_create(request):
     )
     log_activity(request.user, "category", "ساخت سریع دسته‌بندی %s" % category.name)
     return JsonResponse(
-        {"ok": True, "existing": False, "id": category.id, "label": category.label,
-         "kind": category.kind}
+        {
+            "ok": True,
+            "existing": False,
+            "id": category.id,
+            "label": category.label,
+            "icon": category.icon,
+            "color": category.color,
+            "kind": category.kind,
+        }
     )
 
 

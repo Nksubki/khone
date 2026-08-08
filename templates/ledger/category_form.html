@@ -17,24 +17,44 @@
       {% for radio in form.kind %}
       <label class="kind-option kind-{{ radio.data.value }}">
         {{ radio.tag }}
-        <span>{% if radio.data.value == 'expense' %}💸 هزینه{% else %}💰 دریافت{% endif %}</span>
+        <span>
+          {% if radio.data.value == 'expense' %}
+            {% icon "arrow-down-circle" %} هزینه
+          {% else %}
+            {% icon "arrow-up-circle" %} دریافت
+          {% endif %}
+        </span>
       </label>
       {% endfor %}
     </div>
   </div>
 
-  <div class="field-row">
-    <div class="field">
-      <label for="{{ form.icon.id_for_label }}">آیکن</label>
-      {{ form.icon }}
-      <div class="emoji-picker">
-        {% for emoji in form.emoji_suggestions %}
-        <button class="emoji-btn" type="button" data-emoji="{{ emoji }}" data-target="#{{ form.icon.id_for_label }}">{{ emoji }}</button>
-        {% endfor %}
-      </div>
-      {% for error in form.icon.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  <!-- انتخاب آیکن -->
+  <div class="field {% if form.icon.errors %}has-error{% endif %}">
+    <label>آیکن دسته‌بندی</label>
+    <div class="icon-picker">
+      {% for radio in form.icon %}
+      <label class="icon-tile" title="{{ radio.choice_label }}">
+        {{ radio.tag }}
+        <span class="icon-tile-body">{% icon radio.data.value "icon-lg" %}</span>
+      </label>
+      {% endfor %}
     </div>
-    {% include "ledger/partials/_field.html" with field=form.color %}
+    {% for error in form.icon.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <!-- انتخاب رنگ -->
+  <div class="field {% if form.color.errors %}has-error{% endif %}">
+    <label>رنگ دسته‌بندی</label>
+    <div class="color-picker">
+      {% for radio in form.color %}
+      <label class="color-swatch" title="{{ radio.choice_label }}" style="--swatch: {{ radio.data.value }};">
+        {{ radio.tag }}
+        <span class="color-dot"></span>
+      </label>
+      {% endfor %}
+    </div>
+    {% for error in form.color.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
   </div>
 
   {% include "ledger/partials/_field.html" with field=form.description %}
@@ -50,7 +70,9 @@
   </div>
 
   <div class="form-actions">
-    <button class="btn btn-primary btn-lg" type="submit">{% if is_new %}ساخت دسته‌بندی{% else %}ذخیره تغییرات{% endif %}</button>
+    <button class="btn btn-primary btn-lg" type="submit">
+      {% icon "check" %} {% if is_new %}ساخت دسته‌بندی{% else %}ذخیره تغییرات{% endif %}
+    </button>
     <a class="btn btn-ghost" href="{% url 'ledger:category_list' %}">انصراف</a>
   </div>
 </form>
