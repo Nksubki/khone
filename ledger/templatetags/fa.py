@@ -1,11 +1,48 @@
-"""فیلترها و تگ‌های قالب برای نمایش فارسی (تاریخ شمسی، مبلغ، ارقام)."""
+"""فیلترها و تگ‌های قالب برای نمایش فارسی (تاریخ شمسی، مبلغ، ارقام) و آیکن‌های SVG."""
 from django import template
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
+from ..icons import safe_icon
 from ..utils import jalali
 from ..utils.numbers import format_money, group_digits, humanize_amount
 
 register = template.Library()
+
+
+# --------------------------------------------------------------------------- #
+#  آیکن‌های SVG (به‌جای ایموجی)
+# --------------------------------------------------------------------------- #
+@register.simple_tag(name="icon")
+def icon_tag(name, css="", title=""):
+    """
+    درج آیکن SVG از اسپرایت صفحه.
+
+    نمونه‌ها:
+        {% icon "mic" %}
+        {% icon "trash" "icon-lg" %}
+        {% icon category.icon "" category.name %}
+    """
+    key = safe_icon(name)
+    classes = ("icon " + (css or "")).strip()
+    label = (title or "").strip()
+    if label:
+        markup = (
+            '<svg class="%s" role="img" aria-label="%s"><title>%s</title>'
+            '<use href="#i-%s"></use></svg>'
+        ) % (escape(classes), escape(label), escape(label), key)
+    else:
+        markup = (
+            '<svg class="%s" aria-hidden="true" focusable="false">'
+            '<use href="#i-%s"></use></svg>'
+        ) % (escape(classes), key)
+    return mark_safe(markup)
+
+
+@register.filter(name="icon_key")
+def icon_key(name):
+    """کلید آیکن معتبر (برای استفاده در ویژگی‌های HTML)."""
+    return safe_icon(name)
 
 
 # --------------------------------------------------------------------------- #

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="grid-2">
   <section class="card">
-    <div class="card-head"><h2>مشخصات من</h2></div>
+    <div class="card-head"><h2>{% icon "gear" %} مشخصات من</h2></div>
     <div class="profile-head">
       <span class="avatar avatar-lg">{{ profile.initials }}</span>
       <div>
@@ -25,23 +25,31 @@
       <input type="hidden" name="action" value="profile">
       {% include "ledger/partials/_field.html" with field=profile_form.full_name %}
       {% include "ledger/partials/_field.html" with field=profile_form.phone %}
-      <button class="btn btn-primary" type="submit">ذخیره مشخصات</button>
+      <button class="btn btn-primary" type="submit">{% icon "check" %} ذخیره مشخصات</button>
     </form>
   </section>
 
   <section class="card">
-    <div class="card-head"><h2>تغییر رمز عبور</h2></div>
+    <div class="card-head"><h2>{% icon "key" %} تغییر رمز عبور</h2></div>
     <form method="post" novalidate>
       {% csrf_token %}
       <input type="hidden" name="action" value="password">
       {% include "ledger/partials/_field.html" with field=password_form.current_password %}
       {% include "ledger/partials/_field.html" with field=password_form.password1 %}
       {% include "ledger/partials/_field.html" with field=password_form.password2 %}
-      <button class="btn btn-primary" type="submit">تغییر رمز</button>
+      <button class="btn btn-primary" type="submit">{% icon "check" %} تغییر رمز</button>
     </form>
 
-    <div class="card-head"><h2>ظاهر برنامه</h2></div>
-    <p class="muted">برای تغییر بین حالت روشن و تیره از دکمه 🌙 در نوار بالا استفاده کنید. انتخاب شما در همین مرورگر ذخیره می‌شود.</p>
+    <div class="card-head"><h2>{% icon "moon" %} ظاهر برنامه</h2></div>
+    <p class="muted">
+      برای تغییر بین حالت روشن و تیره از دکمه ماه/خورشید در نوار بالا استفاده کنید.
+      انتخاب شما در همین مرورگر ذخیره می‌شود.
+    </p>
+
+    <div class="card-head"><h2>{% icon "mic" %} ورودی صوتی</h2></div>
+    <p class="muted" id="voice-status-box">
+      وضعیت پشتیبانی مرورگر از ورودی صوتی در حال بررسی…
+    </p>
   </section>
 </div>
 {% endblock %}

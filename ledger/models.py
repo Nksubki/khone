@@ -6,6 +6,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+from .icons import CATEGORY_ICON_CHOICES, DEFAULT_ICON
 from .utils import jalali
 from .utils.numbers import format_money, humanize_amount
 
@@ -199,7 +200,12 @@ class Category(models.Model):
     kind = models.CharField(
         "نوع", max_length=20, choices=KIND_CHOICES, default=KIND_EXPENSE
     )
-    icon = models.CharField("آیکن (ایموجی)", max_length=8, blank=True, default="🧱")
+    icon = models.CharField(
+        "آیکن",
+        max_length=32,
+        choices=CATEGORY_ICON_CHOICES,
+        default=DEFAULT_ICON,
+    )
     color = models.CharField(
         "رنگ", max_length=9, choices=COLOR_CHOICES, default="#3b82f6"
     )
@@ -226,7 +232,8 @@ class Category(models.Model):
 
     @property
     def label(self):
-        return ("%s %s" % (self.icon, self.name)).strip()
+        """عنوان متنی (برای فهرست‌های کشویی و خروجی JSON)."""
+        return self.name
 
     def total(self, kind=KIND_EXPENSE):
         return self.transactions.filter(kind=kind).aggregate(s=models.Sum("amount"))["s"] or 0
@@ -433,31 +440,32 @@ def log_activity(user, action, summary):
 
 
 DEFAULT_CATEGORIES = (
-    ("میلگرد و آهن", "🏗️", "#ef4444"),
-    ("سیمان و گچ", "🪣", "#78716c"),
-    ("آجر و بلوک", "🧱", "#f97316"),
-    ("شن و ماسه", "⛰️", "#eab308"),
-    ("بتن و بتن‌ریزی", "🚧", "#64748b"),
-    ("دستمزد کارگر", "👷", "#22c55e"),
-    ("دستمزد بنّا", "🧰", "#10b981"),
-    ("تأسیسات برقی", "💡", "#f59e0b"),
-    ("تأسیسات مکانیکی و لوله‌کشی", "🚰", "#06b6d4"),
-    ("کاشی و سرامیک", "🔲", "#8b5cf6"),
-    ("درب و پنجره", "🚪", "#a855f7"),
-    ("نقاشی و رنگ", "🎨", "#ec4899"),
-    ("عایق و ایزوگام", "🛡️", "#3b82f6"),
-    ("اجاره ماشین و جرثقیل", "🚜", "#14b8a6"),
-    ("حمل و نقل", "🚚", "#6366f1"),
-    ("عوارض و شهرداری", "🏛️", "#84cc16"),
-    ("مهندس و نقشه‌کشی", "📐", "#0ea5e9"),
-    ("متفرقه", "📦", "#64748b"),
+    ("میلگرد و آهن", "rebar", "#ef4444"),
+    ("سیمان و گچ", "cement", "#78716c"),
+    ("آجر و بلوک", "brick", "#f97316"),
+    ("شن و ماسه", "sand", "#eab308"),
+    ("بتن و بتن‌ریزی", "mixer", "#64748b"),
+    ("دستمزد کارگر", "helmet", "#22c55e"),
+    ("دستمزد بنّا", "trowel", "#10b981"),
+    ("تأسیسات برقی", "bolt", "#f59e0b"),
+    ("تأسیسات مکانیکی و لوله‌کشی", "droplet", "#06b6d4"),
+    ("کاشی و سرامیک", "tile", "#8b5cf6"),
+    ("درب و پنجره", "door", "#a855f7"),
+    ("نقاشی و رنگ", "paint", "#ec4899"),
+    ("عایق و ایزوگام", "layers", "#3b82f6"),
+    ("اجاره ماشین و جرثقیل", "crane", "#14b8a6"),
+    ("حمل و نقل", "truck", "#6366f1"),
+    ("عوارض و شهرداری", "columns", "#84cc16"),
+    ("مهندس و نقشه‌کشی", "ruler", "#0ea5e9"),
+    ("داربست", "ladder", "#f97316"),
+    ("متفرقه", "box", "#64748b"),
 )
 
 DEFAULT_INCOME_CATEGORIES = (
-    ("آورده شریک", "🤝", "#22c55e"),
-    ("فروش واحد", "🏠", "#10b981"),
-    ("وام و تسهیلات", "🏦", "#3b82f6"),
-    ("سایر دریافتی‌ها", "💰", "#f59e0b"),
+    ("آورده شریک", "partner", "#22c55e"),
+    ("فروش واحد", "home", "#10b981"),
+    ("وام و تسهیلات", "bank", "#3b82f6"),
+    ("سایر دریافتی‌ها", "coins", "#f59e0b"),
 )
 
 

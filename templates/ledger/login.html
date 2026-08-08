@@ -1,18 +1,19 @@
-{% load static %}<!DOCTYPE html>
+{% load static fa %}<!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0f766e">
   <title>ورود — حساب‌کتاب ساخت‌وساز</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
 <body class="login-page">
+{% include "ledger/partials/_sprite.html" %}
   <div class="login-wrap">
     <div class="login-card">
       <div class="login-brand">
-        <span class="login-icon">🏗️</span>
+        <span class="login-icon">{% icon "building" %}</span>
         <h1>حساب‌کتاب ساخت‌وساز</h1>
         <p>ثبت و بررسی هزینه‌های پروژه ساختمانی</p>
       </div>
@@ -41,7 +42,10 @@
           <label for="{{ form.password.id_for_label }}">رمز عبور</label>
           <div class="password-wrap">
             {{ form.password }}
-            <button class="icon-btn pass-toggle" type="button" data-toggle-password aria-label="نمایش رمز">👁️</button>
+            <button class="icon-btn pass-toggle" type="button" data-toggle-password aria-label="نمایش رمز">
+              <span class="pass-show">{% icon "eye" %}</span>
+              <span class="pass-hide">{% icon "eye-off" %}</span>
+            </button>
           </div>
           {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
         </div>
@@ -63,8 +67,10 @@
     document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var input = btn.parentElement.querySelector('input');
-        if (!input) return;
-        input.type = input.type === 'password' ? 'text' : 'password';
+        if (!input) { return; }
+        var showing = input.type !== 'password';
+        input.type = showing ? 'password' : 'text';
+        btn.classList.toggle('is-visible', !showing);
       });
     });
   </script>

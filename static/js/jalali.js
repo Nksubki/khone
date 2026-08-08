@@ -187,7 +187,7 @@
       var prev = document.createElement('button');
       prev.type = 'button';
       prev.className = 'jdp-nav';
-      prev.innerHTML = '›';
+      prev.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg>';
       prev.title = 'ماه قبل';
       prev.addEventListener('click', function () {
         view.m -= 1;
@@ -198,7 +198,7 @@
       var next = document.createElement('button');
       next.type = 'button';
       next.className = 'jdp-nav';
-      next.innerHTML = '‹';
+      next.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg>';
       next.title = 'ماه بعد';
       next.addEventListener('click', function () {
         view.m += 1;

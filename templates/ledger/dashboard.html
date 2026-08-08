@@ -6,28 +6,40 @@
 <!-- کارت‌های آماری -->
 <div class="stat-grid">
   <div class="card stat-card stat-danger">
-    <div class="stat-label">هزینه {{ month_label }}</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "arrow-down-circle" %}</span>
+      <div class="stat-label">هزینه {{ month_label }}</div>
+    </div>
     <div class="stat-value">{{ month_summary.expense_total|money }} <small>تومان</small></div>
     <div class="stat-sub">{{ month_summary.expense_total|amount_words }}</div>
     <div class="stat-foot">{{ month_summary.expense_count|fa }} رکورد · میانگین {{ month_summary.average|short_money }}</div>
   </div>
 
   <div class="card stat-card stat-success">
-    <div class="stat-label">دریافتی {{ month_label }}</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "arrow-up-circle" %}</span>
+      <div class="stat-label">دریافتی {{ month_label }}</div>
+    </div>
     <div class="stat-value">{{ month_summary.income_total|money }} <small>تومان</small></div>
     <div class="stat-sub">{{ month_summary.income_total|amount_words }}</div>
     <div class="stat-foot">{{ month_summary.income_count|fa }} رکورد</div>
   </div>
 
   <div class="card stat-card stat-info">
-    <div class="stat-label">امروز</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "calendar" %}</span>
+      <div class="stat-label">امروز</div>
+    </div>
     <div class="stat-value">{{ today_expense|money }} <small>تومان</small></div>
     <div class="stat-sub">این هفته: {{ week_expense|short_money }} تومان</div>
     <div class="stat-foot">{{ today_count|fa }} رکورد امروز</div>
   </div>
 
   <div class="card stat-card stat-neutral">
-    <div class="stat-label">جمع کل هزینه‌ها</div>
+    <div class="stat-head">
+      <span class="stat-icon">{% icon "wallet" %}</span>
+      <div class="stat-label">جمع کل هزینه‌ها</div>
+    </div>
     <div class="stat-value">{{ all_summary.expense_total|money }} <small>تومان</small></div>
     <div class="stat-sub">
       {% if all_summary.balance < 0 %}
@@ -45,8 +57,8 @@
   <!-- نمودار ۶ ماه -->
   <section class="card">
     <div class="card-head">
-      <h2>روند هزینه ۶ ماه اخیر</h2>
-      <a class="link" href="{% url 'ledger:reports' %}">گزارش کامل ←</a>
+      <h2>{% icon "chart" %} روند هزینه ۶ ماه اخیر</h2>
+      <a class="link" href="{% url 'ledger:reports' %}">گزارش کامل {% icon "chevron-left" "icon-sm" %}</a>
     </div>
     {% if month_series %}
     <div class="chart-bars">
@@ -68,15 +80,15 @@
   <!-- بیشترین دسته‌ها -->
   <section class="card">
     <div class="card-head">
-      <h2>پرهزینه‌ترین دسته‌ها در {{ month_label }}</h2>
-      <a class="link" href="{% url 'ledger:category_list' %}">همه دسته‌ها ←</a>
+      <h2>{% icon "folder" %} پرهزینه‌ترین دسته‌ها در {{ month_label }}</h2>
+      <a class="link" href="{% url 'ledger:category_list' %}">همه دسته‌ها {% icon "chevron-left" "icon-sm" %}</a>
     </div>
     {% if top_categories %}
     <ul class="rank-list">
       {% for row in top_categories %}
       <li>
         <a class="rank-item" href="{% url 'ledger:transaction_list' %}?range=month&cat={{ row.id }}">
-          <span class="rank-icon" style="background: {{ row.color }}22; color: {{ row.color }};">{{ row.icon }}</span>
+          <span class="rank-icon" style="background: {{ row.color }}22; color: {{ row.color }};">{% icon row.icon %}</span>
           <span class="rank-body">
             <span class="rank-top">
               <strong>{{ row.name }}</strong>
@@ -98,7 +110,7 @@
 <div class="grid-2">
   <!-- هزینه ۱۴ روز اخیر -->
   <section class="card">
-    <div class="card-head"><h2>۱۴ روز اخیر</h2></div>
+    <div class="card-head"><h2>{% icon "calendar" %} ۱۴ روز اخیر</h2></div>
     <div class="chart-bars chart-days">
       {% for row in day_series %}
       <div class="chart-col" title="{{ row.full_label }}: {{ row.total|money }} تومان">
@@ -114,8 +126,8 @@
   <!-- سهم کاربران -->
   <section class="card">
     <div class="card-head">
-      <h2>خرج هر کاربر در {{ month_label }}</h2>
-      {% if profile.can_manage_users %}<a class="link" href="{% url 'ledger:user_list' %}">مدیریت کاربران ←</a>{% endif %}
+      <h2>{% icon "users" %} خرج هر کاربر در {{ month_label }}</h2>
+      {% if profile.can_manage_users %}<a class="link" href="{% url 'ledger:user_list' %}">مدیریت کاربران {% icon "chevron-left" "icon-sm" %}</a>{% endif %}
     </div>
     {% if by_user %}
     <ul class="rank-list">
@@ -144,13 +156,13 @@
 {% if projects %}
 <section class="card">
   <div class="card-head">
-    <h2>پروژه‌ها</h2>
-    <a class="link" href="{% url 'ledger:project_list' %}">همه پروژه‌ها ←</a>
+    <h2>{% icon "building" %} پروژه‌ها</h2>
+    <a class="link" href="{% url 'ledger:project_list' %}">همه پروژه‌ها {% icon "chevron-left" "icon-sm" %}</a>
   </div>
   <div class="project-grid">
     {% for project in projects %}
     <a class="project-mini" href="{% url 'ledger:transaction_list' %}?range=all&project={{ project.id }}">
-      <strong>🏢 {{ project.name }}</strong>
+      <strong>{% icon "building" %} {{ project.name }}</strong>
       <span>{{ project.total_expense|money }} تومان هزینه</span>
       {% if project.budget %}
       <span class="progress"><span class="progress-fill" style="width: {{ project.budget_percent|bar_width }}%"></span></span>
@@ -165,8 +177,8 @@
 <!-- آخرین رکوردها -->
 <section class="card">
   <div class="card-head">
-    <h2>آخرین رکوردها</h2>
-    <a class="link" href="{% url 'ledger:transaction_list' %}">همه ←</a>
+    <h2>{% icon "receipt" %} آخرین رکوردها</h2>
+    <a class="link" href="{% url 'ledger:transaction_list' %}">همه {% icon "chevron-left" "icon-sm" %}</a>
   </div>
   {% if recent %}
   <div class="tx-list">
@@ -174,10 +186,10 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <span class="empty-icon">🧾</span>
+    <span class="empty-icon">{% icon "receipt" %}</span>
     <p>هنوز هزینه‌ای ثبت نکرده‌اید.</p>
     {% if profile.can_add_records %}
-    <a class="btn btn-primary" href="{% url 'ledger:transaction_create' %}">ثبت اولین هزینه</a>
+    <a class="btn btn-primary" href="{% url 'ledger:transaction_create' %}">{% icon "plus" %} ثبت اولین هزینه</a>
     {% endif %}
   </div>
   {% endif %}
